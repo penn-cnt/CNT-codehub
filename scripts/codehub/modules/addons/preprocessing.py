@@ -14,7 +14,7 @@ from pyedflib import EdfWriter,FILETYPE_EDFPLUS
 from scipy.signal import resample_poly, butter, filtfilt
 
 # Local imports
-from modules.core.yaml_loader import *
+from modules.core.config_loader import *
 from modules.core.error_logging import *
 
 class mne_processing:
@@ -288,7 +288,7 @@ class preprocessing:
         """
         
         # Read in the preprocessing configuration
-        YL = yaml_loader(self.args.preprocess_file)
+        YL = config_loader(self.args.preprocess_file)
         config,self.preprocess_commands = YL.return_handler()
 
         # Get the current module (i.e., the script itself)

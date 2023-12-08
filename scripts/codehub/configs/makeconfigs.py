@@ -115,18 +115,6 @@ class make_config:
 
         with open(filename, 'w') as file:
             yaml.dump(self.config_dict, file, default_flow_style=False)
-
-        import sys
-        sys.exit()
-
-        # Clean up the dictionary to be more readable
-        for key, value in self.config_dict.items():
-            if type(value) == dict:
-                for key2,value2 in self.config_dict[key].items():
-                    self.config_dict[key][key2] = str(value2)
-        
-        with open(filename, 'w') as file:
-            yaml.dump(self.config_dict, file, default_flow_style=False)
     
     def make_config(self,config_library,outfile):
         

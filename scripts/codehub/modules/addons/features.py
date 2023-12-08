@@ -7,7 +7,7 @@ from tqdm import tqdm
 from scipy.signal import welch
 
 # Local imports
-from modules.core.yaml_loader import *
+from modules.core.config_loader import *
 
 class signal_processing:
     
@@ -71,7 +71,7 @@ class features:
         self.feature_df = PD.DataFrame(columns=['file','t_start','t_end','dt','method','tag']+channels)
         
         # Read in the feature configuration
-        YL = yaml_loader(self.args.feature_file)
+        YL = config_loader(self.args.feature_file)
         config,self.feature_commands = YL.return_handler()
 
         # Get the current module (i.e., the script itself)

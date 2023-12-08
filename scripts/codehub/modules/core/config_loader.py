@@ -1,30 +1,43 @@
 import ast
 import yaml
+import json
 import numpy as np
 
-class yaml_loader:
+class config_loader:
     """
     Class devoted to reading in, cleaning up, and preparing yaml scripts for preprocessing and feature pipelines.
     """
 
-    def __init__(self,yaml_file):
+    def __init__(self,input_file):
         
-        # Read in and typecast the yaml file
-        config = yaml.safe_load(open(yaml_file,'r'))
+        # JSON File format is for direct step inputs. Logic gate for json or not(currently yaml only)
+        datatype = input_file.split('.')[-1].lower()
+        if datatype == 'json':
+            self.yaml_config = None
+            config           = json.load(open(input_file,"r"))
 
-        # Add in any looped steps to the correct yaml input format
-        self.loop_handler(config)
+            for ikey in list(config.keys()):
+                for jkey in config[ikey]:
+                    self.str_handler(config[ikey][jkey])
+            self.yaml_step = config
 
-        for ikey in list(config.keys()):
-            for jkey in config[ikey]:
-                self.str_handler(config[ikey][jkey])
-        self.yaml_config = config
+        else:
+            # Read in and typecast the yaml file
+            config = yaml.safe_load(open(input_file,'r'))
 
-        # Make the step sorted dictionary
-        try:
-            self.convert_to_step()
-        except Exception as e:
-            raise KeyError("Unable to parse input configuration file. Please check configs and try again.")
+            # Add in any looped steps to the correct yaml input format
+            self.loop_handler(config)
+
+            for ikey in list(config.keys()):
+                for jkey in config[ikey]:
+                    self.str_handler(config[ikey][jkey])
+            self.yaml_config = config
+
+            # Make the step sorted dictionary
+            try:
+                self.convert_to_step()
+            except Exception as e:
+                raise KeyError("Unable to parse input configuration file. Please check configs and try again.")
 
     def return_handler(self):
         return self.yaml_config,self.yaml_step
