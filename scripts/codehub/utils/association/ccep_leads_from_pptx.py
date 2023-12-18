@@ -5,14 +5,22 @@ from pptx import Presentation
 if __name__ == '__main__':
 
     # Read in the file provided by the user
-    prs = Presentation(argv[1])
+    prs   = Presentation(argv[1])
+    nlead = int(argv[2]) 
 
     # Get the slides in memory
     slides_list = []
     for slide in prs.slides:
         slides_list.append(slide)
 
-    # Leads are supposed to always be the last four pages
+    # Calculate the number of rows that are complete and the remainder
+    ncol   = 16
+    nrows  = np.floor(nlead/ncol).astype('int')
+    ntail  = nlead%ncol
+    rowcnt = 0
+
+    # Parse the channel pages, save to dict. (Leads are supposed to always be the last four pages)
+    chmap = {}
     for slide_cnt,slide in enumerate(slides_list[-4:]):
         
         # Read in the table data
@@ -35,33 +43,31 @@ if __name__ == '__main__':
                     output.append(ivalue)
                     flag = True
 
-        # Clean up and setup logic to split
-        output = np.array(output)
-        ncol   = 16+1   # +1 because of the annoying whitespace object for headers
-        nrow   = 2
-        if slide_cnt in [0,2]:
-            badind = [0,ncol,2*ncol,4*ncol-1,6*ncol-2,7*ncol-2]
-        elif slide_cnt in [1]:
-            badind = [0,2*ncol-1,4*ncol-2,6*ncol-3]
-        elif slide_cnt in [3]:
-            badind = [0,5]
-        mask   = np.ones(output.size).astype('bool')
-        mask[badind] = False
-        output = output[mask]
+        # Attempt to clean up the grnd and ref cells
+        try:
+            output.pop(0)
+            if slide_cnt in [0,2]: output.pop(ncol)
+            output.pop(2*ncol)
+            output.pop(4*ncol)
+            output.pop(6*ncol)
+            if slide_cnt in [0,2]: output.pop(7*ncol)
+        except IndexError:
+            pass
 
-        if slide_cnt < 3:
-            # Make a formatted output
-            ncol   = 16
-            output = output.reshape((-1,ncol))
-        else:
-            ncol   = 2
-            output = output[:8].reshape((-1,ncol))
-        keys   = output[::2]
-        values = output[1::2]
+        # Iterate over number of rows on this page, checking against maximum number
+        while len(output) > 0:
+            if rowcnt < nrows:
+                channels = output[:ncol]
+                output   = output[ncol:]
+                leads    = output[:ncol]
+                output   = output[ncol:]
+                rowcnt  += 1
+            else:
+                output.pop(ntail)
+                channels = output[:ntail]
+                output   = output[ntail:]
+                leads    = output[:ntail]
+                output   = []
+            for idx,ichannel in enumerate(channels):
+                chmap[ichannel] = leads[idx]
 
-        # Get the mapping and their key
-        chmap = dict(zip(keys.ravel(),values.ravel()))
-        keys  = list(chmap.keys())
-
-        for ikey in keys:
-            print(f"{ikey} | {chmap[ikey]}")

@@ -3,6 +3,7 @@ import random as rnd
 rnd.seed(42)
 
 # Basic Python Imports
+import re
 import sys
 import glob
 import argparse
@@ -98,17 +99,19 @@ class data_viewer(data_handler):
         self.tight_layout_dict = tight_layout_dict
 
         # Some tracking variables
-        self.flagged_out          = ['','','','','']
+        self.flagged_out          = ['','','','','','']
         self.sleep_counter        = 0
         self.spike_counter        = 0
         self.seizure_counter      = 0
         self.focal_slow_counter   = 0
         self.general_slow_counter = 0
+        self.artifact_counter     = 0
         self.sleep_labels         = ['','awake','sleep','unknown_sleep_state']
         self.spike_labels         = ['','spikes','spike_free','unknown_spike_state']
         self.seizure_labels       = ['','seizures','seizure_free','unknown_seizure_state']
         self.focal_slow_labels    = ['','focal_slowing','no_focal_slowing','unknown_focal_slowing']
         self.general_slow_labels  = ['','general_slowing','no_general_slowing','unknown_general_slowing']
+        self.artifact_labels      = ['','artifact_heavy']
 
         # Get the approx screen dimensions and set some plot variables
         root         = tk.Tk()
@@ -121,6 +124,7 @@ class data_viewer(data_handler):
         # Save event driven variables
         self.xlim    = []
         self.drawn_y = []
+        self.drawn_a = []
 
         # Prepare the data
         data_handler.data_prep(self)
@@ -140,6 +144,19 @@ class data_viewer(data_handler):
                 self.t0 = self.args.t0
             else:
                 self.t0 = np.random.rand()*(self.t_max-self.args.dur)
+
+        # Attempt to get any annotations
+        pattern = r'(.*?)_(\D+).edf'
+        match = re.search(pattern, infile)
+        if match:
+            base_filename   = match.group(1)
+            events_filename = f"{base_filename}_events.tsv"
+            if path.exists(events_filename):
+                self.events_df = PD.read_csv(events_filename,delimiter="\t")
+            else:
+                self.events_df = PD.DataFrame()
+        else:
+            self.events_df = PD.DataFrame()
 
     def plot_sleep_wake(self):
 
@@ -198,7 +215,7 @@ class data_viewer(data_handler):
         self.lim_dict   = {}
         self.shade_dict = {}
         self.xlim_orig  = [self.t0,self.t0+self.duration]
-        xvals           = np.arange(self.DF.shape[0])/self.fs
+        self.xvals      = np.arange(self.DF.shape[0])/self.fs
         for idx,ichan in enumerate(self.DF.columns):
             # Define the axes
             if idx == 0:
@@ -212,7 +229,7 @@ class data_viewer(data_handler):
 
             # Plot the data
             nstride = 8
-            self.ax_dict[ichan].plot(xvals[::nstride],idata[::nstride],color='k')
+            self.ax_dict[ichan].plot(self.xvals[::nstride],idata[::nstride],color='k')
             self.ax_dict[ichan].set_ylim([ymin,ymax])
             self.lim_dict[ichan] = [ymin,ymax]
 
@@ -353,7 +370,7 @@ class data_viewer(data_handler):
         self.title_str += r"'%s'=Increase Gain; '%s'=Decrease Gain; '%s'=Shift Left; '%s'=Shift Right; 'e'=Zoom-in plot of axis the mouse is on;" %(upa, downa, lefta, righta)
         if self.args.flagging:
             self.title_str += '\n'
-            self.title_str += r"1=Sleep State; 2=Spike Presence; 3=Seizure; 4=Focal Slowing; 5=Generalized Slowing"
+            self.title_str += r"1=Sleep State; 2=Spike Presence; 3=Seizure; 4=Focal Slowing; 5=Generalized Slowing; 6=Artifact Heavy"
 
     def generate_suptitle_str(self):
 
@@ -375,7 +392,9 @@ class data_viewer(data_handler):
 
         # Handle the counter logic
         counter+=1
-        if counter == 4:
+        if counter == 4 and counter_name != 'artifact_counter':
+            counter = 0
+        elif counter == 3 and counter_name == 'artifact_counter':
             counter = 0
 
         # Update the substring
@@ -493,6 +512,24 @@ class data_viewer(data_handler):
             for ikey in self.ax_dict.keys():
                 if event.inaxes == self.ax_dict[ikey]:
                     self.enlarged_plot(ikey)
+        # Show annotations
+        elif event.key == 'A':
+            if 'trial_type' in self.events_df.columns:
+                annot_xval = self.events_df['onset'][0]
+                annot_text = self.events_df['trial_type'][0]
+                
+                if len(self.drawn_a) == 0:
+                    for ikey in self.ax_dict.keys():
+                        self.drawn_a.append(self.ax_dict[ikey].axvline(annot_xval, color='blue', linestyle='--',lw=2))
+                    self.annot_obj = self.ax_dict[self.refkey2].text(annot_xval, 0, annot_text,bbox=dict(boxstyle='round', facecolor='lightgray', 
+                                                                    edgecolor='none', alpha=1.0),verticalalignment='center', horizontalalignment='left', fontsize=12)
+
+                else:
+                    # Remove the vertical lines on the plot
+                    for iobj in self.drawn_a:
+                        iobj.remove()
+                    self.annot_obj.remove()
+                    self.draw_a = []
         # Iterate over target dictionary if available to show mapped colors
         elif event.key == 't' and hasattr(self,'color_dict'):
             for icnt in range(len(self.t_colors)):
@@ -528,6 +565,9 @@ class data_viewer(data_handler):
         # Seizure State Mapping
         elif event.key == '5' and self.args.flagging:
             self.flag_toggle('general_slow_labels','general_slow_counter',4)
+        # Seizure State Mapping
+        elif event.key == '6' and self.args.flagging:
+            self.flag_toggle('artifact_labels','artifact_counter',5)
         # Quit functionality
         elif event.key == 'Q':
             PLT.close("all")
@@ -626,7 +666,7 @@ if __name__ == '__main__':
         files = [args.file]
     else:
         files = glob.glob(args.wildcard)
-
+        
     # Use the output file to skip already reviewed files for state analysis
     if path.exists(args.outfile):
         ref_DF = PD.read_csv(args.outfile)
