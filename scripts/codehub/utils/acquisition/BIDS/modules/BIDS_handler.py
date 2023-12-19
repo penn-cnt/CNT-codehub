@@ -35,7 +35,6 @@ class BIDS_handler:
         uids = subject_uid_df['uid'].values
         if self.uid not in uids:
             self.subject_num = self.proposed_sub
-            print("Using proposed sub")
         else:
             self.subject_num = int(subject_uid_df['subject_number'].values[np.where(uids==self.uid)[0][0]])
 
