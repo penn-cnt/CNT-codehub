@@ -34,11 +34,8 @@ class BIDS_handler:
         # Check if we already have this subject
         uids = subject_uid_df['uid'].values
         if self.uid not in uids:
-            files = glob.glob(self.args.bidsroot+'sub-*')
-            if len(files) > 0:
-                self.subject_num  = max([int(ifile.split('sub-')[-1]) for ifile in files])+1
-            else:
-                self.subject_num = 1
+            self.subject_num = self.proposed_sub
+            print("Using proposed sub")
         else:
             self.subject_num = int(subject_uid_df['subject_number'].values[np.where(uids==self.uid)[0][0]])
 

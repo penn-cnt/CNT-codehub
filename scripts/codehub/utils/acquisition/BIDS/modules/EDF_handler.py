@@ -11,6 +11,7 @@ class EDF_handler(BIDS_handler):
         self.args         = args
         self.input_data   = input_data
         self.input_files  = input_data['orig_filename'].values
+        self.proposed_sub = input_data['proposed_subnum']
         self.subject_path = args.bidsroot+args.subject_file
         self.old_uid      = -999
     

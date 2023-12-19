@@ -1,3 +1,4 @@
+import glob
 import argparse
 import numpy as np
 import pandas as PD
@@ -67,6 +68,18 @@ if __name__ == '__main__':
         col_diff   = np.setdiff1d(incols,input_data.columns)
         for icol in col_diff:
             input_data[icol] = -1
+
+    # Create a proposed subject number mapping (to be superceded by existing mappings for a given uid)
+    files = glob.glob(args.bidsroot+'sub-*')
+    if len(files) > 0:
+        subject_num_floor = max([int(ifile.split('sub-')[-1]) for ifile in files])+1
+    else:
+        subject_num_floor = 1
+    uuid            = np.unique(input_data['uid'].values)
+    uuid_sub        = np.arange(uuid.size)+subject_num_floor
+    subject_mapping = dict(zip(uuid.ravel(),uuid_sub.ravel()))
+    subject_array   = [subject_mapping[ival] for ival in input_data['uid'].values]
+    input_data['proposed_subnum'] = subject_array
 
     # If iEEG.org, pass inputs to that handler to get the data
     if args.ieeg:

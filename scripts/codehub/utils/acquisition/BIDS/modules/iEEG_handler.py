@@ -102,13 +102,14 @@ class iEEG_download(BIDS_handler):
                         self.annotations[idx][event_time_shift] = desc
                         self.annotation_flats.append(desc)
 
-    def download_by_cli(self, uid, file, target, start, duration):
+    def download_by_cli(self, uid, file, target, start, duration, proposed_sub):
 
         # Store the ieeg filename
         self.uid          = uid
         self.current_file = file
         self.target       = target
         self.success_flag = False
+        self.proposed_sub = proposed_sub
 
         # Loop over clips
         if self.success_flag == True:
@@ -131,13 +132,14 @@ class iEEG_download(BIDS_handler):
         BIDS_handler.reset_variables(self)
         self.reset_variables()
 
-    def download_by_annotation(self, uid, file, target):
+    def download_by_annotation(self, uid, file, target, proposed_sub):
 
         # Store the ieeg filename
         self.uid          = uid
         self.current_file = file
         self.target       = target
         self.success_flag = False
+        self.proposed_sub = proposed_sub
 
         # Get the annotation times
         self.get_annotations()
@@ -256,11 +258,12 @@ class iEEG_download(BIDS_handler):
 class ieeg_handler:
 
     def __init__(self,args,input_data):
-        self.args        = args
-        self.input_data  = input_data
-        self.input_files = input_data['orig_filename'].values
-        self.start_times = input_data['start']
-        self.durations   = input_data['duration']
+        self.args         = args
+        self.input_data   = input_data
+        self.input_files  = input_data['orig_filename'].values
+        self.start_times  = input_data['start'].values
+        self.durations    = input_data['duration'].values
+        self.proposed_sub = input_data['proposed_subnum'].values
 
         # Get list of files to skip that already exist locally
         subject_path = self.args.bidsroot+self.args.subject_file
@@ -342,9 +345,9 @@ class ieeg_handler:
                 iid    = self.input_data['uid'].values[file_idx]
                 target = self.input_data['target'].values[file_idx]
                 if self.args.annotations:
-                    IEEG.download_by_annotation(iid,ifile,target)
+                    IEEG.download_by_annotation(iid,ifile,target,self.proposed_sub[file_idx])
                     IEEG = iEEG_download(self.args,self.write_lock)
                 else:
-                    IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx])
+                    IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx])
             else:
                 print("Skipping %s." %(ifile))
