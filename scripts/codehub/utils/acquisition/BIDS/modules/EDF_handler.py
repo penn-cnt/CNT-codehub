@@ -7,10 +7,10 @@ from modules.BIDS_handler import BIDS_handler
 
 class EDF_handler(BIDS_handler):
 
-    def __init__(self,args,input_data,input_files):
+    def __init__(self,args,input_data):
         self.args         = args
         self.input_data   = input_data
-        self.input_files  = input_files
+        self.input_files  = input_data['orig_filename'].values
         self.subject_path = args.bidsroot+args.subject_file
         self.old_uid      = -999
     

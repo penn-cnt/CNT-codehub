@@ -54,39 +54,29 @@ if __name__ == '__main__':
     if args.bidsroot[-1] != '/':
         args.bidsroot += '/'
 
-    # Selection criteria
-    if args.ieeg:    
-        if args.cli:
-            start_time  = args.start
-            duration    = args.duration
-            input_data  = PD.DataFrame([[args.uid,args.dataset,args.target]],columns=['uid','orig_filename','target'])
-        elif args.annotations:
-            if args.inputs_file == None:
-                input_files = [args.dataset]
-                input_data  = PD.DataFrame([[args.uid,args.dataset,args.target]],columns=['uid','orig_filename','target'])
-            else:
-                # Read in the mapping file
-                input_data = PD.read_csv(args.inputs_file)
-    elif args.edf:
-        if args.inputs_file == None:
-            input_files = [args.dataset]
-            input_data  = PD.DataFrame([[args.uid,args.dataset,args.target]],columns=['uid','orig_filename','target'])
-        else:
-            # Read in the mapping file
-            input_data = PD.read_csv(args.inputs_file)
-
-    # Store files to query
-    input_files = input_data['orig_filename'].values
+    # Input data array generation
+    incols = ['uid','orig_filename','start','duration','target']
+    if args.cli:
+        input_data  = PD.DataFrame([[args.uid,args.dataset,args.start,args.duration,args.target]],columns=incols)
+    elif args.annotations:
+        input_data  = PD.DataFrame([[args.uid,args.dataset,-1,-1,args.target]],columns=incols)
+    
+    # Use input file if provided. Cleanup if missing columns
+    if args.inputs_file != None:
+        input_data = PD.read_csv(args.inputs_file)
+        col_diff   = np.setdiff1d(incols,input_data.columns)
+        for icol in col_diff:
+            input_data[icol] = -1
 
     # If iEEG.org, pass inputs to that handler to get the data
     if args.ieeg:
-        IH = ieeg_handler(args,input_data,input_files)
+        IH = ieeg_handler(args,input_data)
         if not args.multithread:
             IH.single_pull()
         else:
             IH.multicore_pull()
     elif args.edf:
-        EH = EDF_handler(args,input_data,input_files)
+        EH = EDF_handler(args,input_data)
         EH.save_data()
 
     # Make a bids ignore file
