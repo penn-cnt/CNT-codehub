@@ -158,7 +158,7 @@ class iEEG_download(BIDS_handler):
                 BIDS_handler.event_mapper(self)
                 BIDS_handler.save_bids(self)
         except AttributeError as e:
-            print(e)
+            pass
 
         # Clear namespace of variables for file looping
         BIDS_handler.reset_variables(self)
