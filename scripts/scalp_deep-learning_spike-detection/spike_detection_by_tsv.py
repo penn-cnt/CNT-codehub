@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
     # Read in the appropriate files
     pathing    = pl.Path(argv[1])
-    posixpaths = glob.glob("**/*events.tsv")
+    posixpaths = pathing.glob("**/*events.tsv")
     files      = [str(ifile.absolute()) for ifile in posixpaths]
 
     # Spike word bank
@@ -39,9 +39,9 @@ if __name__ == '__main__':
             no_spike_files.append(ifile)
 
     # Write out the results
-    fp = open(f"{argv[2]}spike_files.txt")
+    fp = open(f"{argv[2]}spike_files.txt",'w')
     for ival in spike_files: fp.write(f"{ival}\n")
     fp.close()
-    fp = open(f"{argv[2]}spike_free_files.txt")
+    fp = open(f"{argv[2]}spike_free_files.txt",'w')
     for ival in no_spike_files: fp.write(f"{ival}\n")
     fp.close()
