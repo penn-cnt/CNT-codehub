@@ -174,14 +174,12 @@ def mlp(args, X_train_normalized, X_test_normalized, y_train, y_test, n1, n2, d1
     # Get the f1-scores
     y_test_pred = y_pred_binary
     y_naive   = np.ones(y_test.size)
-    f1        = f1_score(y_test,y_test_pred,average='micro')
-    f1_naive  = f1_score(y_test,y_naive,average='micro')
-    auc       = roc_auc_score(y_test,y_test_pred,average='micro')
+    f1        = f1_score(y_test,y_test_pred,average='weighted')
+    auc       = roc_auc_score(y_test,y_test_pred,average='weighted')
     
     if verbose:
         print(f"Test Accuracy: {accuracy:.4f}")
         print(f"Calculated f1-score: {f1}")
-        print(f"Naive f1-score: {f1_naive}")
         print(f"Calculated AUC: {auc}")
 
     # Generate and return the output object
@@ -218,11 +216,17 @@ if __name__ == '__main__':
 
         # Break out the exogenous and endogenous portions
         raw_Y = rawdata.target.values
-        raw_X = rawdata.drop(['target'],axis=1)
+        raw_X = rawdata.drop(['target','annotation'],axis=1)
+
+        tmp      = raw_X['FZ-CZ'].values
+        goodinds = (tmp>0)
+        raw_X    = raw_X.iloc[goodinds]
+        raw_Y    = raw_Y[goodinds]
 
         # Try a log transformation on the data
         for icol in raw_X.columns:
             if icol != 'tag':
+                print(icol,raw_X[icol].values.min(),raw_X[icol].values.max())
                 raw_X[icol] = np.log10(raw_X[icol].values)
                 
         # Apply train test split
@@ -240,11 +244,13 @@ if __name__ == '__main__':
         X_train_normalized, X_test_normalized, y_train, y_test = pickle.load(open(spath,"rb"))
 
     # Run a simple grid search
-    n1        = np.arange(0.5,1.75,.25)
-    n2        = np.arange(0.25,1.0,.25)
-    d1        = np.array([0.2,0.35,0.5])
-    d2        = np.array([0.2,0.35,0.5])
-    bvals     = np.array([64,256,1024])
+    #n1        = np.arange(0.5,1.75,.25)
+    #n2        = np.arange(0.25,1.0,.25)
+    n1        = np.array([1.25])
+    n2        = np.array([0.5])
+    d1        = np.array([0.2])
+    d2        = np.array([0.2])
+    bvals     = np.array([256])
     combos    = list(product(n1,n2,d1,d2,bvals))
     
     # Create output object
