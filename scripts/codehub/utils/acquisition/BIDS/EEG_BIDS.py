@@ -14,6 +14,22 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
+def get_proposal_subnums(args,input_data):
+
+    files = glob.glob(args.bidsroot+'sub-*')
+    if len(files) > 0:
+        existing_subnums = np.array([int(ifile.split('sub-')[-1]) for ifile in files])
+    else:
+        existing_subnums = np.array([0])
+    uuid            = np.unique(input_data['uid'].values)
+    uuid_sub        = np.arange(uuid.size+existing_subnums.max())+1
+    uuid_sub        = np.setdiff1d(uuid_sub,existing_subnums)[:uuid.size]
+    subject_mapping = dict(zip(uuid.ravel(),uuid_sub.ravel()))
+    subject_array   = [subject_mapping[ival] for ival in input_data['uid'].values]
+    input_data['proposed_subnum'] = subject_array
+    
+    return input_data
+
 if __name__ == '__main__':
 
     # Command line options needed to obtain data.
@@ -69,17 +85,8 @@ if __name__ == '__main__':
         for icol in col_diff:
             input_data[icol] = -1
 
-    # Create a proposed subject number mapping (to be superceded by existing mappings for a given uid)
-    files = glob.glob(args.bidsroot+'sub-*')
-    if len(files) > 0:
-        subject_num_floor = max([int(ifile.split('sub-')[-1]) for ifile in files])+1
-    else:
-        subject_num_floor = 1
-    uuid            = np.unique(input_data['uid'].values)
-    uuid_sub        = np.arange(uuid.size)+subject_num_floor
-    subject_mapping = dict(zip(uuid.ravel(),uuid_sub.ravel()))
-    subject_array   = [subject_mapping[ival] for ival in input_data['uid'].values]
-    input_data['proposed_subnum'] = subject_array
+    # Get the proposed subnums
+    input_data = get_proposal_subnums(args,input_data)
 
     # If iEEG.org, pass inputs to that handler to get the data
     if args.ieeg:

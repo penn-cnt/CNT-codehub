@@ -118,7 +118,7 @@ class BIDS_handler:
 
                 # Save the edf in bids format
                 session_str    = "%s%03d" %(self.args.session,self.session_number)
-                self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%04d' %(self.subject_num), run=idx+1, task='task')
+                self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%05d' %(self.subject_num), run=idx+1, task='task')
                 write_raw_bids(bids_path=self.bids_path, raw=raw, events_data=events,event_id=self.event_mapping, allow_preload=True, format='EDF',verbose=False)
 
                 # Save the targets with the edf path paired up to filetype
@@ -136,7 +136,7 @@ class BIDS_handler:
 
         # Save the edf in bids format
         session_str    = "%s%03d" %(self.args.session,self.session_number)
-        self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%04d' %(self.subject_num), run=idx+1, task='task')
+        self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%05d' %(self.subject_num), run=idx+1, task='task')
         write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False,overwrite=True)
 
         # Save the targets with the edf path paired up to filetype
