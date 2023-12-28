@@ -1,8 +1,10 @@
 # These should be updated in adding new functionality to the addon modules.
 allowed_project_args:
-    SCALP_00: Basic scalp processing pipeline. (bjprager 10/2023)
+    SCALP_BASIC: Basic scalp processing pipeline. (bjprager 10/2023)
 allowed_datatypes:
     EDF: Read in EDF data.
+allowed_clean_args:
+    HUP: Clean according to HUPs lead and channel format.
 allowed_channel_args:
     HUP1020: Channels associated with a 10-20 montage performed at HUP.
     RAW: Use all possible channels. Warning, channels may not match across different datasets.
@@ -12,7 +14,7 @@ allowed_montage_args:
 
 # These should only be modified if changing core functionality of the pipeline
 allowed_input_args:
-    CSV: Use a comma separated file of files to read in. (default)
+    CSV: Use a comma separated file of files to read in.
     MANUAL: Manually enter filepaths.
     GLOB: Use Python glob to select all files that follow a user inputted pattern.
 allowed_viability_args:

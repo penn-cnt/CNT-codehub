@@ -15,41 +15,49 @@ class make_config:
     def __init__(self,config_library,outfile):
         
         # Define the dictionary to be saved to YAML
-        self.config_dict = {}
-        
-        # Logic for preprocessing versus feature extraction
-        self.make_config(config_library,outfile)
+        self.config_dict    = {}
+        self.config_library = config_library
+        self.outfile        = outfile
             
-    def print_methods(self,library):
+    def print_methods(self,silent=False):
         
         # Get all members (classes and functions) defined in the module
-        members = inspect.getmembers(library)
+        members = inspect.getmembers(self.config_library)
 
         # Create the output dictionart for easier access
         self.argdict = {}
 
         # Iterate through the members
+        output_str = ''
+        spacer     = "===================================="
         for name, member in members:
 
             # Check if it's a class defined in the module
-            if inspect.isclass(member) and member.__module__ == library.__name__:
-                print("====================================\n")
+            if inspect.isclass(member) and member.__module__ == self.config_library.__name__:
+                if not silent:
+                    print(f"{spacer}\n")
 
                 # Iterate through the methods of the class and print their docstrings
                 for method_name, method in inspect.getmembers(member):
                     if method_name != '__init__':
                         if inspect.isfunction(method):
                             docstring = inspect.getdoc(method)
-                            docstring = docstring.replace("\n","\n    ")
+                            try:
+                                docstring = docstring.replace("\n","\n    ")
+                            except AttributeError:
+                                pass
                             if docstring:
                                 
                                 # Print clean output to screen
-                                print(f"Method: {method_name}\nDocstring: {docstring}\n")
+                                if not silent:
+                                    print(f"Method: {method_name}\n{spacer}\nDocstring: {docstring}\n")
+                                output_str += f"{method_name}\n{spacer}\n{docstring}\n\n\n"
                                 
                                 # Save arguments to dictionary for easier access
                                 signature = inspect.signature(getattr(member,method_name))
                                 args      = list(signature.parameters.values())
                                 self.argdict[method_name] = [str(ival) for ival in args]
+        return output_str
 
     def literal_to_list(self,literal_str):
         vals = ast.literal_eval(literal_str)
@@ -116,16 +124,16 @@ class make_config:
         with open(filename, 'w') as file:
             yaml.dump(self.config_dict, file, default_flow_style=False)
     
-    def make_config(self,config_library,outfile):
+    def create_config(self):
         
         # Pass the preprocessing library to a function that prints user-readable docstrings.
-        self.print_methods(config_library)
+        self.print_methods()
         
         # Loop over user selected methods until we receive a quit signal
         while True:
             method_choice = input("\nEnter Method Name to configure. (Q/Quit to stop configuration): ")
             if method_choice.lower() in ['q','quit']:
-                self.write_yaml_file(outfile)
+                self.write_yaml_file(self.outfile)
                 break
             else:
                 self.query_inputs(method_choice)

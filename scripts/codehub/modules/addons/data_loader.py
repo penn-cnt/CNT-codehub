@@ -1,7 +1,10 @@
 # General libraries
+import random
+import string
 import numpy as np
 import pandas as PD
 from sys import exit
+from functools import partial
 from mne.io import read_raw_edf
 from pyedflib.highlevel import read_edf_header
 
@@ -22,6 +25,7 @@ from modules.core.target_loader import *
 from modules.core.dataframe_manager import *
 from modules.core.output_manager import *
 from modules.core.data_viability import *
+from modules.core.data_stream import *
 
 class data_loader_test:
 
@@ -56,6 +60,10 @@ class data_loader:
             bool: Flag if data loaded correctly
         """
         
+        # Get the host and username from the arguments
+        self.ssh_host     = self.args.ssh_host
+        self.ssh_username = self.args.ssh_username
+
         # Logic gate for filetyping, returns if load succeeded
         flag = self.data_loader_logic(self.args.datatype)
 
@@ -78,7 +86,7 @@ class data_loader:
         else:
             return False
 
-    def direct_inputs(self,infile,filetype):
+    def direct_inputs(self,infile,filetype,ssh_host=None,ssh_username=None):
         """
         Method for loading data directly outside of the pipeline environment.
 
@@ -91,8 +99,10 @@ class data_loader:
         """
 
         # Define some instance variables needed to work within this pipeline
-        self.infile  = infile
-        self.oldfile = '' 
+        self.infile       = infile
+        self.oldfile      = '' 
+        self.ssh_host     = ssh_host
+        self.ssh_username = ssh_username
 
         # Try to load data
         flag = self.data_loader_logic(filetype)
@@ -153,6 +163,8 @@ class data_loader:
         
         if filetype.lower() == 'edf':
             flag = self.load_edf()
+        if filetype.lower() == 'ssh_edf':
+            flag = self.load_ssh(filetype)
         return flag
 
     def load_edf(self):
@@ -177,6 +189,37 @@ class data_loader:
         else:
             self.channels = [ival for ival in self.channel_metadata]
             return True
+        
+    def load_ssh(self,filetype):
+
+        if filetype.lower() == 'ssh_edf':
+            # Make a name for the temporary file
+            file_path = ''.join(random.choices(string.ascii_letters + string.digits, k=8))+".edf"
+
+            # Make a temporary file to be deleted at the end of this process
+            data_stream.ssh_copy(self,self.infile,file_path,self.ssh_host,self.ssh_username)
+
+            success_flag = True
+            try:
+                # Test the header
+                read_edf_header(file_path)
+
+                # If successful read the actual data
+                raw = read_raw_edf(file_path,verbose=False)
+            except:
+                success_flag = False
+
+            if success_flag:
+                # Munge the data into the final objects
+                self.indata   = raw.get_data().T
+                self.channels = raw.ch_names
+                self.sfreq    = raw.info.get('sfreq')
+
+                # Keep a static copy of the channels so we can just reference this when using the same input data
+                self.channel_metadata = self.channels.copy()                
+
+            os.remove(file_path)
+            return success_flag
 
     def load_iEEG(self,username,password,dataset_name):
 

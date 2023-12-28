@@ -108,12 +108,19 @@ class project_handlers:
         """
 
         # Case statement the workflow
-        if self.args.project.lower() == 'scalp_00':
+        if self.args.project.lower() == 'scalp_basic':
             project_handlers.scalp_00(self)
 
-    def scalp_00(self):
+    def scalp_basic(self):
         """
-        Run pipeline to load EDF data for a scalp project.
+        Basic pipeline to load EDF data for a scalp project.
+
+        1) Load data.
+        2) Clean channel data.
+        3) Map channel names.
+        4) Create dataframes.
+        5) Preprocessing steps.
+        6) Make montage.
         """
 
         # Import data into memory

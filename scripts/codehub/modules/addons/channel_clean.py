@@ -30,7 +30,7 @@ class channel_clean:
     def __init__(self):
         pass
 
-    def pipeline(self,clean_method='HUP'):
+    def pipeline(self):
         """
         Clean a vector of channel labels via the main pipeline.
 
@@ -39,7 +39,7 @@ class channel_clean:
         """
 
         # Apply cleaning logic
-        self.channel_clean_logic(clean_method)
+        self.channel_clean_logic(self.args.channel_clean)
 
         # Add the cleaned labels to metadata
         self.metadata[self.file_cntr]['channels'] = self.clean_channel_map
@@ -70,13 +70,12 @@ class channel_clean:
 
         # Logic gates for different cleaning methods
         if clean_method.lower() == 'hup':
-            self.HUP_clean()
+            self.clean_hup()
 
-    def HUP_clean(self):
+    def clean_hup(self):
         """
         Return the channel names according to HUP standards.
         Adapted from Akash Pattnaik code.
-        Updated to handle labels not typically generated at HUP (All leters, no numbers.)
         """
 
         self.clean_channel_map = []

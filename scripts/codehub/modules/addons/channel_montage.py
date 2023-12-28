@@ -25,6 +25,9 @@ class channel_montage:
 
     Output should create a new object self.montage_channels with the labels for the output montage data vectors. You must also return the actual montage data.
     (This is due to an inheritance issue passing this data directly to the dataframe manager.)
+
+    Naming for new functions should follow f"montage_{option name given to allowed_montage_args}". If not in this format, the code will work, but the UI
+    wrapper may not be able to find this function.
     """
 
     def __init__(self):
@@ -93,6 +96,8 @@ class channel_montage:
     def montage_common_average(self):
         """
         Calculate the common average montage.
+
+        Channel - AVG(Channels).
         """
 
         # Get the averages across all channels per time slice
@@ -108,9 +113,28 @@ class channel_montage:
         # Make the montage dataframe
         return montage_data
 
-    def montage_HUP_1020(self):
+    def montage_hup1020(self):
         """
         Calculate the HUP 1020 montage and create the channel labels. Passes its data directly to the dataframe class.
+
+        Montage map:
+        FP01 - F07
+        F07  - T03
+        T03  - T05
+        T05  - O01
+        FP02 - F08
+        F08  - T04
+        T04  - T06
+        T06  - O02
+        FP01 - F03
+        F03  - C03
+        C03  - P03
+        P03  - O01
+        FP02 - F04
+        F04  - C04
+        C04  - P04
+        P04  - O02
+        FZ   - CZ
         """
 
         # Channel structure for the montage

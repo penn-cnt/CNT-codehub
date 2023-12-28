@@ -13,6 +13,7 @@ dependencies:
   - ipython
   - pytorch
   - scikit-learn
+  - paramiko
   - pip:
     - pennprov
     - mne
@@ -22,4 +23,5 @@ dependencies:
     - EDFlib-Python
     - pyyaml
     - ../wheels/ieeg-1.6-py3-none-any.whl
-
+    - dearpygui
+    - pyperclip

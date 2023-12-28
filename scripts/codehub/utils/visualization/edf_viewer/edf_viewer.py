@@ -41,7 +41,7 @@ class data_handler:
 
         # Get the raw data and pointers
         if not self.args.pickle_load:
-            DF,self.fs = DL.direct_inputs(self.infile,'edf')
+            DF,self.fs = DL.direct_inputs(self.infile,filetype,ssh_host=self.args.ssh_host,ssh_username=self.args.ssh_username)
         else:
             DF,self.fs = pickle.load(open(self.infile,"rb"))
             self.fs    = self.fs[0]
@@ -90,13 +90,14 @@ class data_handler:
 
 class data_viewer(data_handler):
 
-    def __init__(self, infile, args, tight_layout_dict):
+    def __init__(self, infile, args, tight_layout_dict, filetype):
         
         # Save the input info
         self.infile            = infile
         self.fname             = infile.split('/')[-1]
         self.args              = args
         self.tight_layout_dict = tight_layout_dict
+        self.filetype          = filetype
 
         # Some tracking variables
         self.flagged_out          = ['','','','','','']
@@ -627,8 +628,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Simplified data merging tool.", formatter_class=CustomFormatter)
 
     input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument("--file", type=str, help="Input file to plot.")
+    input_group.add_argument("--cli", type=str, help="Single input file to plot from cli.")
     input_group.add_argument("--wildcard", type=str, help="Wildcard enabled path to plot multiple datasets.")
+    input_group.add_argument("--file", type=str, help="Filepath to txt or csv of input files.")
 
     output_group = parser.add_argument_group('Output options')
     output_group.add_argument("--outfile", type=str, help="Output filepath if predicting sleep/spikes/etc.")
@@ -644,6 +646,10 @@ if __name__ == '__main__':
     duration_group = parser.add_mutually_exclusive_group()
     duration_group.add_argument("--dur", type=float, default=10, help="Duration to plot in seconds.")
     duration_group.add_argument("--dur_frac", action='store_true', default=False, help="Flag. Duration in fraction of total data.")
+
+    ssh_group = parser.add_argument_group('SSH Data Loading Options')
+    ssh_group.add_argument("--ssh_host", type=str, help="If provided, look for data on this host connection string rather than local.")
+    ssh_group.add_argument("--ssh_username", type=str, help="When loading data via ssh tunnel, this is the host ssh username to log in as.")
 
     misc_group = parser.add_argument_group('Misc options')
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug mode. Save no outputs.")
@@ -662,10 +668,18 @@ if __name__ == '__main__':
         args.outfile = ''
 
     # Create the file list to read in
-    if args.file != None:
+    if args.cli != None:
         files = [args.file]
-    else:
+    elif args.wildcard != None:
         files = glob.glob(args.wildcard)
+    elif args.file != None:
+        files = PD.read_csv(args.file,usecols=[0],names=['files']).values.flatten()
+    
+    # Set ssh filetype if a connection string is provided
+    if args.ssh_host != None:
+        filetype = 'ssh_edf'
+    else:
+        filetype = 'edf'
         
     # Use the output file to skip already reviewed files for state analysis
     if path.exists(args.outfile):
@@ -681,7 +695,7 @@ if __name__ == '__main__':
         iDF   = ref_DF.loc[(ref_DF.username==args.username)&(ref_DF.filename==ifile)]
         if iDF.shape[0] == 0:
             try:
-                DV                = data_viewer(ifile,args,tight_layout_dict)
+                DV                = data_viewer(ifile,args,tight_layout_dict,filetype)
                 tight_layout_dict = DV.montage_plot()
                 PLT.close("all")
             except:

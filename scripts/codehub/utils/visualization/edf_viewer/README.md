@@ -32,3 +32,10 @@ Set start time (t=0 in this example)
 ```
 python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging --t0 0
 ```
+
+Loading data through an ssh tunnel
+```
+python utils/visualization/edf_viewer/edf_viewer.py --file "files.tmp" --username bjprager --flagging --ssh_host borel.seas.upenn.edu --username bjprager
+```
+
+where files.tmp is a single column file of filepaths to edf data to view. In this case, paths on the remote system.
