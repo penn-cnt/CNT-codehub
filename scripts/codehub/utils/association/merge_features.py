@@ -1,3 +1,4 @@
+import yaml
 import glob
 import pickle
 import argparse
@@ -10,6 +11,7 @@ if __name__ == '__main__':
     # Argument parsing
     parser = argparse.ArgumentParser(description="Simplified data merging tool.")
     parser.add_argument("--indir", type=str, help='Input directory')
+    parser.add_argument("--col_config", type=str, help="Optional path to a yaml with drop_col and obj_col definitions.")
     parser.add_argument("--outfile_model", default="merged_model.pickle", type=str, help='Output filename for model data')
     parser.add_argument("--outfile_meta", default="merged_meta.pickle", type=str, help='Output filename for metadata')
     parser.add_argument("--outfile_map", default="merged_map.pickle", type=str, help='Output filename for any mapped data column dictionaries')
@@ -20,9 +22,15 @@ if __name__ == '__main__':
     files = [ifile for ifile in files if ifile != args.outfile_model and ifile != args.outfile_meta]
 
     if len(files) > 0:
+        
         # Object columns
-        drop_cols = ['file', 't_end', 'method']
-        obj_cols  = ['t_start', 'dt', 'uid']
+        if args.col_config == None:
+            drop_cols = ['file', 't_end', 'method']
+            obj_cols  = ['t_start', 'dt', 'uid']
+        else:
+            col_info = yaml.safe_load(open(args.col_config,'r'))
+            for key, inner_dict in data.items():
+                globals()[key] = inner_dict
 
         # Loop over the files and save the outputs
         meta_obj  = []

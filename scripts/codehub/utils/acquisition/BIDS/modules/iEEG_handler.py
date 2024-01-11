@@ -112,20 +112,19 @@ class iEEG_download(BIDS_handler):
         self.proposed_sub = proposed_sub
 
         # Loop over clips
+        BIDS_handler.__init__(self)
+        self.session_method_handler(start,duration)
         if self.success_flag == True:
-            BIDS_handler.__init__(self)
-            self.session_method_handler(start,duration)
-            if self.success_flag == True:
-                BIDS_handler.get_channel_type(self)
-                BIDS_handler.make_info(self)
-                BIDS_handler.add_raw(self)
+            BIDS_handler.get_channel_type(self)
+            BIDS_handler.make_info(self)
+            BIDS_handler.add_raw(self)
 
         # Save the bids files if we have any data
         try:
             if len(self.raws) > 0:
-                BIDS_handler.event_mapper(self)
                 BIDS_handler.save_bids(self)
-        except AttributeError:
+        except AttributeError as e:
+            print(e)
             pass
 
         # Clear namespace of variables for file looping
@@ -184,6 +183,7 @@ class iEEG_download(BIDS_handler):
                     self.success_flag = True
                     break
                 except (IIA.IeegConnectionError,IIA.IeegServiceError,TimeoutException,RTIMEOUT,TypeError) as e:
+                    print(e)
                     if n_attempts<self.n_retry:
                         sleep(5)
                         n_attempts += 1
