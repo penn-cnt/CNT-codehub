@@ -89,7 +89,7 @@ class channel_montage:
 
         # Logic for different montages
         if montage.lower() == "hup1020":
-            return self.montage_HUP_1020()
+            return self.montage_hup1020()
         elif montage.lower() == "common_average":
             return self.montage_common_average()   
 

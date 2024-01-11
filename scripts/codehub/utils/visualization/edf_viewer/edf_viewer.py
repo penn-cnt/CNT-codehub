@@ -674,6 +674,10 @@ if __name__ == '__main__':
         files = glob.glob(args.wildcard)
     elif args.file != None:
         files = PD.read_csv(args.file,usecols=[0],names=['files']).values.flatten()
+
+    # Alert user if there are no eligible files
+    if len(files) == 0:
+        print("No files found matching your criteria.")
     
     # Set ssh filetype if a connection string is provided
     if args.ssh_host != None:

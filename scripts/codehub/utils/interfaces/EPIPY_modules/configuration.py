@@ -12,12 +12,9 @@ class configuration_handler:
         help_window_width  = int(0.32*main_window_width)
         
         # Get the approximate number of characters allowed per-line. One time call to self to be visible across all widgets.
-        max_pixel_width = 8
-        self.nchar_help = int(help_window_width/max_pixel_width)
-
-        with dpg.file_dialog(directory_selector=True, show=False, callback=self.folder_selection_callback, height=400) as file_dialog:
-            dpg.add_input_text(label="Output Folder", width=400, callback=self.folder_selection_callback)
-            dpg.add_button(label="Select Folder", callback=lambda: dpg.configure_item(file_dialog, show=True))
+        max_pixel_width  = 8
+        self.nchar_child = int(child_window_width/max_pixel_width)
+        self.nchar_help  = int(help_window_width/max_pixel_width)
 
         with dpg.group(horizontal=True):
             with dpg.child_window(width=child_window_width):
@@ -36,10 +33,11 @@ class configuration_handler:
 
                 # Input pathing
                 with dpg.group(horizontal=True):
+                    arg_var = 'input_str'
                     dpg.add_text(f"{'Input Path':40}")
                     self.input_path_widget_text = dpg.add_input_text(width=int(0.35*child_window_width))
-                    self.input_path_widget      = dpg.add_button(label="Select File", callback=lambda: dpg.configure_item(file_dialog, show=True),width=int(0.14*child_window_width))
-                    dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_help(self.configuration_help, sender, app_data), tag="input_path")
+                    self.input_path_widget      = dpg.add_button(label="Select File", width=int(0.14*child_window_width), callback=lambda sender, app_data:self.init_file_selection(self.input_path_widget_text, sender, app_data))
+                    dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_help(self.configuration_help, sender, app_data), tag=arg_var)
 
                 ########################## 
                 ###### Output Block ######
@@ -49,9 +47,17 @@ class configuration_handler:
                 # Output directory selection
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{'Output Directory':40}")
-                    output_widget_text = dpg.add_input_text(width=int(0.35*child_window_width))
-                    self.output_widget = dpg.add_button(label="Select Folder", callback=lambda: dpg.configure_item(file_dialog, show=True),width=int(0.14*child_window_width))
+                    self.output_widget_text = dpg.add_input_text(width=int(0.35*child_window_width))
+                    self.output_widget      = dpg.add_button(label="Select Folder", width=int(0.14*child_window_width), callback=lambda sender, app_data:self.init_folder_selection(self.output_widget_text, sender, app_data))
                     dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_help(self.configuration_help, sender, app_data), tag="outdir")
+                
+                # Join targets to output
+                with dpg.group(horizontal=True):
+                    arg_var = 'targets'
+                    default = self.defaults[arg_var]
+                    dpg.add_text(f"{'Join Targets with output?':40}")
+                    self.target_widget  = dpg.add_radio_button(items=[True,False], callback=self.radio_button_callback, horizontal=True, default_value=default)
+                    dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_help(self.configuration_help, sender, app_data), tag=arg_var)
 
                 ########################## 
                 ###### Config Block ######
@@ -140,26 +146,8 @@ class configuration_handler:
                     arg_var = 'silent'
                     default = self.defaults[arg_var]
                     dpg.add_text(f"{'Silent':40}")
-                    self.multithread_widget  = dpg.add_radio_button(items=[True,False], callback=self.radio_button_callback, horizontal=True, default_value=default)
+                    self.verbose_widget  = dpg.add_radio_button(items=[True,False], callback=self.radio_button_callback, horizontal=True, default_value=default)
                     dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_help(self.configuration_help, sender, app_data), tag=arg_var)
-
-                ########################### 
-                ###### Project Block ######
-                ###########################
-                dpg.add_spacer(height=10)
-                dpg.add_separator()
-                project_list = list(self.options['allowed_project_args'].keys())
-                with dpg.group(horizontal=True):
-                    arg_var = 'project'
-                    dpg.add_text(f"{'Project Workflow':40}")
-                    self.project_widget = dpg.add_combo(items=project_list, callback=self.combo_callback, default_value=self.defaults[arg_var],width=int(0.5*child_window_width))
-                    dpg.add_button(label="Help", callback=lambda sender, app_data: self.update_combo_help(self.configuration_help,sender,app_data), tag=arg_var)
-
-                # Submit a job
-                dpg.add_spacer(height=175)
-                dpg.add_separator()
-                with dpg.group(horizontal=True):
-                    dpg.add_button(label="Submit Job", callback=self.submit_fnc)
 
             # Text widget
             with dpg.child_window(width=help_window_width):

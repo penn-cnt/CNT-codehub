@@ -17,10 +17,14 @@ class config_loader:
             config           = json.load(open(input_file,"r"))
 
             for ikey in list(config.keys()):
-                for jkey in config[ikey]:
-                    self.str_handler(config[ikey][jkey])
+                for jkey in list(config[ikey].keys()):
+                    if isinstance(config[ikey][jkey],dict):
+                        for lkey,lvalue in config[ikey][jkey].items():
+                            if isinstance(lvalue,list):
+                                config[ikey][jkey][lkey] = self.str_handler(lvalue)
+                            else:
+                                config[ikey][jkey][lkey] = self.str_handler([lvalue])[0] 
             self.yaml_step = config
-
         else:
             # Read in and typecast the yaml file
             config = yaml.safe_load(open(input_file,'r'))

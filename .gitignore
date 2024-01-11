@@ -9,6 +9,7 @@ scripts/codehub/utils/etc/*
 *.nii
 *.nii.gz
 *.[0-9]
+*.pyc
 
 *.mat
 *.npy

@@ -109,7 +109,9 @@ class project_handlers:
 
         # Case statement the workflow
         if self.args.project.lower() == 'scalp_basic':
-            project_handlers.scalp_00(self)
+            project_handlers.scalp_basic(self)
+        elif self.args.project.lower() == 'imaging_basic':
+            project_handlers.imaging_basic(self)
 
     def scalp_basic(self):
         """
@@ -152,3 +154,15 @@ class project_handlers:
 
                 # Update the output list
                 output_manager.update_output_list(self,self.montaged_dataframe.values)
+
+    def imaging_basic(self):
+        """
+        Basic pipeline to processing imaging data.
+        
+        1) Save kittens
+        2) Face goblins
+        3) Do some shenanigans.
+        4) Fight gods.
+        """
+
+        pass

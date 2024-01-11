@@ -84,6 +84,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         output_manager.save_features(self)
 
     def feature_manager(self):
+        """
+        Kick off function for feature extraction if requested by the user.
+        Also handles multithreading and screen appearance for verbose options. (tqdm with multithreading requires management of terminal whitespace)
+        """
 
         if not self.args.no_feature_flag:
             if self.args.multithread:
@@ -99,6 +103,9 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
             features.__init__(self)
 
     def target_manager(self):
+        """
+        Kick off function for loading targets.
+        """
 
         if self.args.targets:
             for ikey in self.metadata.keys():
@@ -277,7 +284,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     feature_group.add_argument("--feature_file", type=str,  help="Path to preprocessing YAML file. If not provided, code will walk user through generation of a pipeline.")
 
     target_group = parser.add_argument_group('Target Association Options')
-    target_group.add_argument("--targets", action='store_true', default=False, help="Join target data with the final dataframe")
+    target_group.add_argument("--targets", action='store_true', default=True, help="Join target data with the final dataframe")
 
     output_group = parser.add_argument_group('Output Options')
     output_group.add_argument("--outdir", type=str,  required=require_flag, help="Output directory.") 
@@ -285,8 +292,7 @@ def argument_handler(argument_dir='./',require_flag=True):
                               Also allows for skipping on subsequent loads. Default=outdir+excluded.txt (In Dev. Just gets initial load fails.)") 
 
     misc_group = parser.add_argument_group('Misc Options')
-    misc_group.add_argument("--csv_file", type=str, help="If provided, filepath to csv input.")
-    misc_group.add_argument("--glob_str", type=str, help="If provided, glob input.")
+    misc_group.add_argument("--input_str", type=str, help="Optional. If glob input, wildcard path. If csv/manual, filepath to input csv/raw data.")
     misc_group.add_argument("--silent", action='store_true', default=False, help="Silent mode.")
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug mode. If set, does not save results. Useful for testing code.")
     args = parser.parse_args()
@@ -325,14 +331,14 @@ if __name__ == "__main__":
     # Set the input file list
     if args.input == 'CSV':
         
-        if args.csv_file == None:
+        if args.input_str == None:
             # Tab completion enabled input
             completer = PathCompleter()
             print("Using CSV input. Enter a three column csv file with filepath,starttime,endtime.")
             print("If not starttime or endtime provided, defaults to argument inputs. Use --help for more information.")
             file_path = prompt("Please enter path to input file csv: ", completer=completer)
         else:
-            file_path = args.csv_file
+            file_path = args.input_str
 
         # Read in csv file
         input_csv   = PD.read_csv(file_path)
@@ -345,12 +351,12 @@ if __name__ == "__main__":
         end_times   = np.nan_to_num(end_times,nan=args.t_end)
     elif args.input == 'GLOB':
 
-        if args.glob_str == None:
+        if args.input_str == None:
             # Tab completion enabled input
             completer = PathCompleter()
             file_path = prompt("Please enter (wildcard enabled) path to input files: ", completer=completer)
         else:
-            file_path = args.glob_str
+            file_path = args.input_str
         files     = glob.glob(file_path)
 
         # Make sure we were handed a good filepath

@@ -81,7 +81,7 @@ class channel_mapping:
 
         # Logic for different mappings
         if self.channel_mapping.lower() == "hup1020":
-            self.mapping_HUP1020()
+            self.mapping_hup1020()
 
     def mapping_hup1020(self):
         """
