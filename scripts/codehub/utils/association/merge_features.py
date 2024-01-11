@@ -58,7 +58,9 @@ if __name__ == '__main__':
         iDF                                        = PD.concat(model_obj)
         iDF['tag'], tag_mapping_dict               = PD.factorize(iDF['tag'])
         iDF['target'], target_mapping_dict         = PD.factorize(iDF['target'])
-        iDF['annotation'], annotation_mapping_dict = PD.factorize(iDF['target'])
+        iDF['annotation'], annotation_mapping_dict = PD.factorize(iDF['annotation'])
+        if 'file' in iDF.columns:
+            iDF['file'], file_mapping_dict = PD.factorize(iDF['file'])
 
         # Final downcasting attempt
         for icol in iDF:
@@ -69,6 +71,8 @@ if __name__ == '__main__':
 
         # Make the mapping dictionary
         output_dict = {'tag':tag_mapping_dict,'target':target_mapping_dict,'annotation':annotation_mapping_dict}
+        if file in iDF.columns:
+            output_dict['file'] = file_mapping_dict
 
         print("Making the model file")
         pickle.dump(iDF,open(f"{args.indir}{args.outfile_model}","wb"))
