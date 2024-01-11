@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
         # Make the mapping dictionary
         output_dict = {'tag':tag_mapping_dict,'target':target_mapping_dict,'annotation':annotation_mapping_dict}
-        if file in iDF.columns:
+        if 'file' in iDF.columns:
             output_dict['file'] = file_mapping_dict
 
         print("Making the model file")
