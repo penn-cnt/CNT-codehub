@@ -33,6 +33,10 @@ allowed_imaging_programs:
     Synth-BDisco:
         help: Path to Synth-BDisco configuration file.
         path: 'path/to/Synth-BDisco'
+    QSIPrep:
+        help: Path to QSI Prep
+        path: 'path/to/qsi_prep'
+
 
 # These should only be modified if changing core functionality of the pipeline
 allowed_input_args:
