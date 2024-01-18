@@ -669,7 +669,7 @@ if __name__ == '__main__':
 
     # Create the file list to read in
     if args.cli != None:
-        files = [args.file]
+        files = [args.cli]
     elif args.wildcard != None:
         files = glob.glob(args.wildcard)
     elif args.file != None:
