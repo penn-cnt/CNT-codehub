@@ -242,7 +242,7 @@ def argument_handler(argument_dir='./',require_flag=True):
 
     datamerge_group = parser.add_argument_group('Data Merging Options')
     datamerge_group.add_argument("--input", type=str, choices=list(allowed_input_args.keys()), default="GLOB", help=f"R|Choose an option:\n{allowed_input_help}")
-    datamerge_group.add_argument("--n_input", type=int, default=0, help=f"Limit number of files read in. Useful for testing or working in batches.")
+    datamerge_group.add_argument("--n_input", type=int, default=0, help=f"Limit number of files read in. Useful for testing or working in batches. (0=all)")
     datamerge_group.add_argument("--n_offset", type=int, default=0, help=f"Offset the files read in. Useful for testing or working in batch.")
     datamerge_group.add_argument("--project", type=str, choices=list(allowed_project_args.keys()), default="SCALP_BASIC", help=f"R|Choose an option:\n{allowed_project_help}")
     datamerge_group.add_argument("--multithread", action='store_true', default=False, help="Multithread flag.")
@@ -396,7 +396,7 @@ if __name__ == "__main__":
     end_times   = end_times[args.n_offset:]
 
     # Limit file length as needed
-    if args.n_input != None:
+    if args.n_input > 0:
         files       = files[:args.n_input]
         start_times = start_times[:args.n_input]
         end_times   = end_times[:args.n_input]
@@ -457,7 +457,7 @@ if __name__ == "__main__":
         args.preprocess_file = dirpath+"preprocessing_"+timestamp+".yaml"
         config_handler       = make_config(preprocessing,args.preprocess_file)
         config_handler.create_config()
-    if args.feature_file == None:
+    if args.feature_file == None and not args.no_feature_flag:
         from modules.addons import features
         dirpath           = args.outdir+"configs/"
         os.system("mkdir -p %s" %(dirpath))

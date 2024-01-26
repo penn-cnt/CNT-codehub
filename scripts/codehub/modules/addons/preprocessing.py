@@ -279,6 +279,8 @@ class preprocessing_utils:
         """
         Save a snapshot of the data in pickle format.
         (Useful for testing changes across steps.)
+
+        substr: Only save files that have the substring.
         """
 
         # Handle default pathing if needed

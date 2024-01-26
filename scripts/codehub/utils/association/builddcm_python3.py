@@ -161,9 +161,6 @@ def main(myid=None, out=None, gnd=None, ref=None, ppt_file=None, nlead=None):
         electrodes = manual_entry(myid, out, gnd, ref)
     else:
         electrodes = ppt_read(ppt_file,nlead)
-    
-    print(electrodes)
-    exit()
 
     # Output logic
     if electrodes:

@@ -85,6 +85,13 @@ if __name__ == '__main__':
         for icol in col_diff:
             input_data[icol] = -1
 
+    # Make sure we have numeric types
+    for icol in input_data.columns:
+        try:
+            input_data[icol] = PD.to_numeric(input_data[icol],downcast='float')
+        except ValueError:
+            pass
+
     # Get the proposed subnums
     input_data = get_proposal_subnums(args,input_data)
 

@@ -128,8 +128,8 @@ class iEEG_download(BIDS_handler):
             pass
 
         # Clear namespace of variables for file looping
-        BIDS_handler.reset_variables(self)
-        self.reset_variables()
+        #BIDS_handler.reset_variables(self)
+        #self.reset_variables()
 
     def download_by_annotation(self, uid, file, target, proposed_sub):
 
@@ -162,8 +162,8 @@ class iEEG_download(BIDS_handler):
             pass
 
         # Clear namespace of variables for file looping
-        BIDS_handler.reset_variables(self)
-        self.reset_variables()
+        #BIDS_handler.reset_variables(self)
+        #self.reset_variables()
 
     def session_method_handler(self,start,duration,annotation_flag=False):
         """
@@ -183,11 +183,11 @@ class iEEG_download(BIDS_handler):
                     self.success_flag = True
                     break
                 except (IIA.IeegConnectionError,IIA.IeegServiceError,TimeoutException,RTIMEOUT,TypeError) as e:
-                    print(e)
                     if n_attempts<self.n_retry:
                         sleep(5)
                         n_attempts += 1
                     else:
+                        print(f"Error: {e}")
                         self.success_flag = False
                         fp = open(self.args.bidsroot+self.args.failure_file,"a")
                         fp.write(f"{self.uid},{self.current_file},{start},{duration},{self.target},'{e}'\n")

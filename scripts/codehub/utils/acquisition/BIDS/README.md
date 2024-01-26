@@ -1,10 +1,21 @@
 # BIDS Data Generation
 
+BIDS data is a means of organizing and naming epilepsy datasets in a cross-platform multi-institute manner that removes confusion from differing naming schema.
+
 ## EEG Data to BIDS
+
+When possible, we should aim to download data into a BIDS compliant format. The underlying data can still be accessed using direct invocation via your preferred language,  This code will create a bids dataset from
+- Local files
+- iEEG.org datasets.
+
+The following sections detail how to 
 
 ### iEEG.org
 
-#### Sample Call
+This section gives some examples on how to obtain data from iEEG.org.
+
+#### Download all annotation layers
+
 ```
 python EEG_BIDS.py --ieeg --username BJPrager --password ****** --bidsroot ../../user_data/BIDS/ --session preimplant --inputs_file samples/targets.csv --annotations --multithread --ncpu 2
 ```
@@ -20,7 +31,18 @@ Where
 - multithread : Download and prepare BIDS data using multiple cpus
 - ncpu : Number of cpus to use if multithread is selected
 
-For more information and other options, please consult:
+#### Download a list of select start times
+
 ```
-python EEG_BIDS.py --help
+python utils/acquisition/BIDS/EEG_BIDS.py --ieeg --username bjprager --password ********* --bidsroot ../../user_data/BIDS --session preimplant --inputs_file utils/acquisition/BIDS/samples/input_file.csv --cli
+```
+
+Where
+- cli : Download by start times and durations found either in the inputs_file or in the cli
+
+
+#### Download a single file
+
+```
+python utils/acquisition/BIDS/EEG_BIDS.py --ieeg --username bjprager --password ********* --bidsroot ../../user_data/BIDS --session preimplant --cli --start=8832031250 --duration=1e6 --dataset=EMU1144_Day01_1
 ```

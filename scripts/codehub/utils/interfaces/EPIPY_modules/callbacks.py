@@ -100,7 +100,14 @@ class callback_handler:
         """
         Select a file/folder and update the folder path field.
         """
+        # Get the selected path
         selected_path = list(app_data['selections'].values())[0]
+
+        # Handle dpg bug about folder selection appearing twice in a string
+        selected_path_arr = selected_path.split('/')
+        if selected_path_arr[-2] == selected_path_arr[-1]:
+            selected_path = '/'.join(selected_path_arr[:-1])
+
         dpg.set_value(self.current_path_obj,selected_path)
 
     #################################
@@ -154,7 +161,7 @@ class callback_handler:
             else:
                 if os.path.exists(outpath):
                     if os.path.isdir(outpath):
-                        outpath   = outpath+"preprocess.yaml"
+                        outpath   = outpath+"/preprocess.yaml"
                         writeflag = True
                     else:
                          dpg.set_value(self.yaml_input_preprocess_widget,"Output filepath already exists.")
@@ -190,7 +197,7 @@ class callback_handler:
             else:
                 if os.path.exists(outpath):
                     if os.path.isdir(outpath):
-                        outpath   = outpath+"features.yaml"
+                        outpath   = outpath+"/features.yaml"
                         writeflag = True
                     else:
                          dpg.set_value(self.yaml_input_features_widget,"Output filepath already exists.")

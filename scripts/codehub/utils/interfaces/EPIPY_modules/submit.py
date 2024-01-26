@@ -20,7 +20,7 @@ class submit_handler:
                 self.submit_widget_text = dpg.add_input_text(multiline=True,width=width,height=height)
                 with dpg.group(horizontal=True):
                     dpg.add_button(label="Show Command",callback=self.create_submit_cmd)
-                    dpg.add_button(label="Copy Command",callback=lambda sender,app_data:pyperclip.copy(dpg.get_value(self.submit_widget_text)))
+                    dpg.add_button(label="Copy Command",callback=lambda sender,app_data:pyperclip.copy(dpg.get_value(self.submit_widget_text).replace("\n","")))
                     dpg.add_button(label="Resize Box",callback=self.update_submit_widget)
 
                 dpg.add_button(label="Submit Job")

@@ -58,10 +58,10 @@ class output_manager:
         Save the feature dataframe
         """
 
-        if not self.args.debug:
+        if not self.args.debug and not self.args.no_feature_flag:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
-            pickle.dump(self.feature_df,open("%s/%s_features_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
             pickle.dump(self.metadata,open("%s/%s_meta_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
+            pickle.dump(self.feature_df,open("%s/%s_features_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
 
     def save_output_list(self):
         """

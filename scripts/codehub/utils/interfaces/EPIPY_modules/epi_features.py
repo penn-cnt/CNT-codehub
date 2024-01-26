@@ -64,7 +64,7 @@ class epi_features_handler:
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"{'Output YAML Filename':40}")
                     self.features_output_yaml_widget_text = dpg.add_input_text(width=int(0.35*child_window_width))
-                    self.features_output_yaml_widget      = dpg.add_button(label="Select Folder", callback=lambda: dpg.configure_item(file_dialog, show=True),width=int(0.14*child_window_width))
+                    self.features_output_yaml_widget      = dpg.add_button(label="Select Folder", callback=lambda sender, app_data:self.init_folder_selection(self.features_output_yaml_widget_text, sender, app_data))
 
                 ############################### 
                 ###### YAML Editor Block ######
