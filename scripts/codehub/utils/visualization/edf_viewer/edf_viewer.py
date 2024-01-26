@@ -702,6 +702,6 @@ if __name__ == '__main__':
                 DV                = data_viewer(ifile,args,tight_layout_dict,filetype)
                 tight_layout_dict = DV.montage_plot()
                 PLT.close("all")
-            except IndexError:
+            except:
                 PLT.close("all")
 
