@@ -1,0 +1,55 @@
+{
+    "5": {
+        "method": "frequency_downsample",
+        "args": {
+            "input_hz": "None",
+            "output_hz": 256
+        }
+    },
+    "2": {
+        "method": "butterworth_filter",
+        "args": {
+            "filter_type": "bandstop",
+            "freq_filter_array": "[59,61]",
+            "butterorder": 4
+        }
+    },
+    "3": {
+        "method": "butterworth_filter",
+        "args": {
+            "filter_type": "bandstop",
+            "freq_filter_array": "[119,121]",
+            "butterorder": 4
+        }
+    },
+    "4": {
+        "method": "butterworth_filter",
+        "args": {
+            "filter_type": "highpass",
+            "freq_filter_array": 1,
+            "butterorder": 4
+        }
+    },
+    "1": {
+        "method": "butterworth_filter",
+        "args": {
+            "filter_type": "lowpass",
+            "freq_filter_array": 100,
+            "butterorder": 4
+        }
+    },
+    "6": {
+        "method": "eyeblink_removal",
+        "args": {
+            "max_iter": 200,
+            "n_components": 10,
+            "config_path": "/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/scripts/codehub/configs/channel_types/scalp/hup_chop_chan_types.yaml"
+        }
+    },
+    "7": {
+        "method": "data_snapshot_pickle",
+        "args": {
+            "substr": "ses-preimplant001_task-task_run-02"
+        }
+    }
+}

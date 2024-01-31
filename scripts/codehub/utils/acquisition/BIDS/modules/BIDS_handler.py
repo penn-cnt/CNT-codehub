@@ -135,10 +135,11 @@ class BIDS_handler:
     def direct_save(self,idx,raw):
 
         # Save the edf in bids format
+        run_number     = int(self.file_idx)+1
         session_str    = "%s%03d" %(self.args.session,self.session_number)
-        self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%05d' %(self.subject_num), run=1, task='task')
+        self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%05d' %(self.subject_num), run=run_number, task='task')
         write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False,overwrite=True)
-
+        
         # Save the targets with the edf path paired up to filetype
         target_path = str(self.bids_path.copy()).rstrip('.edf')+'_targets.pickle'
         target_dict = {'uid':self.uid,'target':self.target}

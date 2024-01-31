@@ -23,19 +23,18 @@ To use this toolkit, we highly recommend you create a python environment. This p
     -  conda develop \<path-to-repository-root\>/scripts/codehub
   
 ## Sample Command
-Random start time via seed (default behavior)
+### Random start time via seed (default behavior) with flagging for all wildcard data matches
 ```
 python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging
 ```
 
-Set start time (t=0 in this example)
+### Random start time via seed (default behavior) with flagging for all wildcard data matches with start time t=0
 ```
 python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging --t0 0
 ```
 
-Loading data through an ssh tunnel
+### Load a single edf file into the viewer
 ```
-python utils/visualization/edf_viewer/edf_viewer.py --file "files.tmp" --username bjprager --flagging --ssh_host borel.seas.upenn.edu --username bjprager
+python utils/visualization/edf_viewer/edf_viewer.py --cli ../../user_data/EDF/sub-00149_ses-preimplant002_task-task_run-06_eeg.edf 
 ```
 
-where files.tmp is a single column file of filepaths to edf data to view. In this case, paths on the remote system.

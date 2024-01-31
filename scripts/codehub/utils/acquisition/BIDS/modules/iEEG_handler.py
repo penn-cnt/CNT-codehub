@@ -102,7 +102,7 @@ class iEEG_download(BIDS_handler):
                         self.annotations[idx][event_time_shift] = desc
                         self.annotation_flats.append(desc)
 
-    def download_by_cli(self, uid, file, target, start, duration, proposed_sub):
+    def download_by_cli(self, uid, file, target, start, duration, proposed_sub, file_idx):
 
         # Store the ieeg filename
         self.uid          = uid
@@ -110,6 +110,7 @@ class iEEG_download(BIDS_handler):
         self.target       = target
         self.success_flag = False
         self.proposed_sub = proposed_sub
+        self.file_idx     = file_idx
 
         # Loop over clips
         BIDS_handler.__init__(self)
@@ -126,10 +127,6 @@ class iEEG_download(BIDS_handler):
         except AttributeError as e:
             print(e)
             pass
-
-        # Clear namespace of variables for file looping
-        #BIDS_handler.reset_variables(self)
-        #self.reset_variables()
 
     def download_by_annotation(self, uid, file, target, proposed_sub):
 
@@ -160,10 +157,6 @@ class iEEG_download(BIDS_handler):
                 BIDS_handler.save_bids(self)
         except AttributeError as e:
             pass
-
-        # Clear namespace of variables for file looping
-        #BIDS_handler.reset_variables(self)
-        #self.reset_variables()
 
     def session_method_handler(self,start,duration,annotation_flag=False):
         """
@@ -348,6 +341,6 @@ class ieeg_handler:
                     IEEG.download_by_annotation(iid,ifile,target,self.proposed_sub[file_idx])
                     IEEG = iEEG_download(self.args,self.write_lock)
                 else:
-                    IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx])
+                    IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],file_idx)
             else:
                 print("Skipping %s." %(ifile))

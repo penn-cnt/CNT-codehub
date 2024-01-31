@@ -1,0 +1,25 @@
+### This is a sampling configuration file for making grids.
+### Due to the numerous permutations, it can get a bit complicated.
+### We recommend running a grid setup and checking your resulting grid files just to be sure it functioned as intended.
+###
+### Format
+###     - step : The step number in the reference yaml file you wish to make a grid from.
+###         - Keyword : A keyword rule for how the reference step should behave with respect to other steps
+### Keywords
+### gt   - Reference step must always be greater than the following step numbers in the reference yaml. (i.e. Blink removal must come after bandpass filters.)
+### next - Reference step must directly precede reference step. 
+### set  - Reference step must always occur at this step number.
+
+step:
+    2:
+        next:
+            - 3
+    6:
+        gt:
+            - 2
+            - 3
+            - 4
+            - 5
+    7:
+        set:
+            - 7

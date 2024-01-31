@@ -368,7 +368,7 @@ class data_viewer(data_handler):
         righta     = u'\u2192'  # Right arrow
         self.title_str  = r"z=Zoom between mouse clicks; 'r'=reset x-scale; 'x'=Show entire x-axis; '0'=reset y-scale; 't'=Toggle targets; 'q'=quit current plot; 'Q'=quit the program entirely"
         self.title_str += '\n'
-        self.title_str += r"'%s'=Increase Gain; '%s'=Decrease Gain; '%s'=Shift Left; '%s'=Shift Right; 'e'=Zoom-in plot of axis the mouse is on;" %(upa, downa, lefta, righta)
+        self.title_str += r"'%s'=Increase Gain; '%s'=Decrease Gain; '%s'=Shift Left; '%s'=Shift Right; '<'=Minor Shift Left; '>'=Minor Shift Right; 'e'=Zoom-in plot of axis the mouse is on;" %(upa, downa, lefta, righta)
         if self.args.flagging:
             self.title_str += '\n'
             self.title_str += r"1=Sleep State; 2=Spike Presence; 3=Seizure; 4=Focal Slowing; 5=Generalized Slowing; 6=Artifact Heavy"
@@ -498,6 +498,18 @@ class data_viewer(data_handler):
         elif event.key == 'right':
             current_xlim = self.ax_dict[self.refkey].get_xlim()
             current_xlim = [ival+self.duration for ival in current_xlim]
+            for ikey in self.ax_dict.keys():
+                self.ax_dict[ikey].set_xlim(current_xlim)
+        # Shift back in time
+        elif event.key == '<':
+            current_xlim = self.ax_dict[self.refkey].get_xlim()
+            current_xlim = [ival-self.duration/2. for ival in current_xlim]
+            for ikey in self.ax_dict.keys():
+                self.ax_dict[ikey].set_xlim(current_xlim)
+        # Shift forward in time
+        elif event.key == '>':
+            current_xlim = self.ax_dict[self.refkey].get_xlim()
+            current_xlim = [ival+self.duration/2. for ival in current_xlim]
             for ikey in self.ax_dict.keys():
                 self.ax_dict[ikey].set_xlim(current_xlim)
         # Show the entire x-axis
@@ -702,6 +714,8 @@ if __name__ == '__main__':
                 DV                = data_viewer(ifile,args,tight_layout_dict,filetype)
                 tight_layout_dict = DV.montage_plot()
                 PLT.close("all")
-            except:
+            except ValueError as e:
+                print("Unable to load data. This is likely due to formatting issues in an EDF header.")
+                print(f"A detail error is as follows: {e}")
                 PLT.close("all")
 

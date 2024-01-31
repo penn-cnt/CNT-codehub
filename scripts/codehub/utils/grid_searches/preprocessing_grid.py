@@ -130,7 +130,7 @@ class yaml_loader:
         Modify the human readable yaml to a more machine friendly step sorted dictionary.
         """
         
-        # Convert human readable config to easier format for code
+        # Convert human readable config to easier format for coded
         self.yaml_step = {}
         for ikey in list(self.yaml_config.keys()):
             steps = self.yaml_config[ikey]['step_nums']
