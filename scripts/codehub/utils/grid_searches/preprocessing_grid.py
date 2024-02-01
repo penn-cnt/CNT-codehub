@@ -80,6 +80,8 @@ class yaml_loader:
     def make_grid_configs(self):
 
         # Loop and make a copy of the step dict so we can swap
+        if self.cmd_file != None:
+            fp_combo = open(f"{self.outdir}/combined_cmd.txt","w")
         if self.accept_flag:
             for idx,iperm in enumerate(self.step_perms):
 
@@ -114,7 +116,7 @@ class yaml_loader:
 
                     # Update the output path
                     output_str = "--outdir"
-                    cmd_arr    = cmd.split(output_str)
+                    cmd_arr    = new_cmd.split(output_str)
                     cmd_arr2   = cmd_arr[1].split()[1:]
                     cmd_tail   = ' '.join(cmd_arr2) 
                     new_cmd    = f"{cmd_arr[0]} {output_str} {output_dir}/ {cmd_tail}"
@@ -124,6 +126,9 @@ class yaml_loader:
                     fp = open(cmd_file,"w")
                     fp.write(new_cmd)
                     fp.close()
+
+                    fp_combo.write(f"{new_cmd}\n")
+            fp_combo.close()
 
     def convert_to_step(self):
         """

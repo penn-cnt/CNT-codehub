@@ -341,7 +341,7 @@ if __name__ == "__main__":
             file_path = args.input_str
 
         # Read in csv file
-        input_csv   = PD.read_csv(file_path)
+        input_csv   = PD.read_csv(file_path,skipinitialspace=True)
         files       = input_csv['filepath'].values
         start_times = input_csv['start_time'].values
         end_times   = input_csv['end_time'].values
