@@ -50,7 +50,7 @@ eyeblink_removal:
     step_nums:
         - 7
     config_path:
-        - /Users/bjprager/Documents/GitHub/SCALP_CONCAT-EEG/scripts/SCALP_CONCAT-EEG/configs/channel_types/scalp/hup_chop_chan_types.yaml
+        - /Users/bjprager/Documents/GitHub/CNT-codehub/scripts/codehub/configs/channel_types/scalp/hup_chop_chan_types.yaml
 
 # Data snapshots
 # Save data at a given point in the preprocessing pipeline so granular examination of the data is possible

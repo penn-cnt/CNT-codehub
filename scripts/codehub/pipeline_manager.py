@@ -108,9 +108,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         """
 
         if self.args.targets:
-            for ikey in self.metadata.keys():
-                ifile   = self.metadata[ikey]['file']
-                target_loader.load_targets(self,ifile,'bids','target')
+            if not self.args.no_feature_flag:
+                for ikey in self.metadata.keys():
+                    ifile   = self.metadata[ikey]['file']
+                    target_loader.load_targets(self,ifile,'bids','target')
 
 class CustomFormatter(argparse.HelpFormatter):
     """
@@ -284,7 +285,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     feature_group.add_argument("--feature_file", type=str,  help="Path to preprocessing YAML file. If not provided, code will walk user through generation of a pipeline.")
 
     target_group = parser.add_argument_group('Target Association Options')
-    target_group.add_argument("--targets", action='store_true', default=True, help="Join target data with the final dataframe")
+    target_group.add_argument("--targets", action='store_true', default=False, help="Join target data with the final dataframe")
 
     output_group = parser.add_argument_group('Output Options')
     output_group.add_argument("--outdir", type=str,  required=require_flag, help="Output directory.") 

@@ -13,6 +13,10 @@ from mne_icalabel import label_components
 from pyedflib import EdfWriter,FILETYPE_EDFPLUS
 from scipy.signal import resample_poly, butter, filtfilt
 
+# File completion libraries
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import PathCompleter
+
 # Local imports
 from modules.core.config_loader import *
 from modules.core.error_logging import *
@@ -60,6 +64,14 @@ class mne_processing:
         # Set components if needed
         if n_components == None:
             n_components = len(self.ppchannels)
+
+        # Make sure that the config file can be found. Easy to forget since it is given by a config file.
+        if not os.path.exists(config_path):
+            print(f"Unable to find {config_path}.")
+            completer   = PathCompleter()
+            config_path = prompt("Please enter path to MNE config file. (Q/q to quit.) ", completer=completer)
+            if config_path.lower() == 'q':
+                raise FileNotFoundError("No valid MNE channel configuration file provided. Quitting.")
 
         # Get the channel mappings in mne compliant form
         mapping      = yaml.safe_load(open(config_path,'r'))

@@ -18,3 +18,11 @@ spectral_energy_welch:
     win_stride:
         - 1
         - 1
+
+median:
+    step_nums:
+        - 3
+
+stdev:
+    step_nums:
+        - 4

@@ -410,7 +410,7 @@ class callback_handler:
                         base_cmd = f"{base_cmd} Please select a file or uncheck this option for runtime generation."
                         break
                     else:
-                        base_cmd = f"{base_cmd} --feature_file {preprocess_fpath}"
+                        base_cmd = f"{base_cmd} --feature_file {features_fpath}"
             else:
                 base_cmd = f"{base_cmd} --no_feature_flag"
 
