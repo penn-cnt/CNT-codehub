@@ -139,7 +139,7 @@ class audit:
         # Make or load the audit data file as needed
         if not os.path.exists(self.audit_data):
             fp = open(self.audit_data,'w')
-            fp.write('path,md5,size-(MB),last-modified-date\n')
+            fp.write('path,md5,size-(MB),last-modified-date,owner\n')
         else:
             fp = open(self.audit_data,'a')
 
@@ -161,7 +161,7 @@ class audit:
                 # Read in and clean the raw audit data
                 fp2     = open(self.outname,'r')
                 rawdata = np.array(fp2.readlines())
-                rawdata = rawdata.reshape((-1,3))
+                rawdata = rawdata.reshape((-1,4))
                 for irow in rawdata:
                     rawstring  = ' '.join(irow)
                     clean_data = rawstring.replace('\n','').replace(' MB','').replace(' ',',')
