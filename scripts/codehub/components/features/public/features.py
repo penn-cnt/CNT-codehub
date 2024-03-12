@@ -6,8 +6,9 @@ import pandas as PD
 from tqdm import tqdm
 from scipy.signal import welch, find_peaks, detrend
 
-# Local imports
-from modules.core.config_loader import *
+# Import error logging (primarily for mne)
+from components.core.internal.config_loader import *
+from components.metadata.public.metadata_handler import *
 
 class signal_processing:
     

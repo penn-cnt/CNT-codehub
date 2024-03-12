@@ -1,19 +1,15 @@
 from sys import exit
+from tqdm import tqdm
 
-# Import the add on classes
-from modules.addons.data_loader import *
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.preprocessing import *
-from modules.addons.features import *
-
-# Import the core classes
-from modules.core.metadata_handler import *
-from modules.core.target_loader import *
-from modules.core.dataframe_manager import *
-from modules.core.output_manager import *
-from modules.core.data_viability import *
+# Component imports
+from components.curation.public.data_loader import *
+from components.core.internal.output_manager import *
+from components.workflows.public.channel_clean import *
+from components.workflows.public.preprocessing import *
+from components.core.internal.dataframe_manager import *
+from components.workflows.public.channel_mapping import *
+from components.workflows.public.channel_montage import *
+from components.metadata.public.metadata_handler import *
 
 class project_handlers:
     """

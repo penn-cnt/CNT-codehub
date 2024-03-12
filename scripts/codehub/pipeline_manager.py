@@ -21,24 +21,33 @@ import numpy as np
 import pandas as PD
 from tqdm import tqdm
 import multiprocessing
-from pyedflib.highlevel import read_edf_header
 
-# Import the add on classes
-from modules.addons.project_handler import *
-from modules.addons.data_loader import *
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.preprocessing import *
-from modules.addons.features import *
+# Core imports
+from components.core.internal.target_loader import *
+from components.core.internal.output_manager import *
+from components.core.internal.dataframe_manager import *
 
-# Import the core classes
-from modules.core.metadata_handler import *
-from modules.core.target_loader import *
-from modules.core.dataframe_manager import *
-from modules.core.output_manager import *
-from modules.core.data_viability import *
+# Curation imports
+from components.curation.public.data_loader import *
+from components.curation.internal.data_curation import *
 
+# Feature imports
+from components.features.public.features import *
+
+# Metadata imports
+from components.metadata.public.metadata_handler import *
+
+# Validation imports
+from components.validation.public.data_viability import *
+
+# Workflow imports
+from components.workflows.public.preprocessing import *
+from components.workflows.public.channel_clean import *
+from components.workflows.public.channel_mapping import *
+from components.workflows.public.channel_montage import *
+from components.workflows.public.project_handler import *
+
+# Import the configuration maker
 from configs.makeconfigs import *
 
 class data_manager(project_handlers, metadata_handler, data_loader, channel_mapping, dataframe_manager, channel_clean, channel_montage, output_manager, data_viability, target_loader):
@@ -126,66 +135,6 @@ class CustomFormatter(argparse.HelpFormatter):
 ############################
 ##### Helper Functions #####
 ############################
-
-def test_input_data(args,files,start_times,end_times):
-    
-    # Get the pathing to the excluded data
-    if args.exclude == None:
-        exclude_path = args.outdir+"excluded.txt"
-    else:
-        exclude_path = args.exclude
-
-    # Get the files to use and which to save
-    good_index = []
-    bad_index  = []
-    if os.path.exists(exclude_path):
-        excluded_files = PD.read_csv(exclude_path)['file'].values
-        for idx,ifile in enumerate(files):
-            if ifile not in excluded_files:
-                good_index.append(idx)
-    else:
-        # Confirm that data can be read in properly
-        excluded_files = []
-        for idx,ifile in enumerate(files):
-            DLT  = data_loader_test()
-            flag = DLT.edf_test(ifile)
-            if flag[0]:
-                good_index.append(idx)
-            else:
-                excluded_files.append([ifile,flag[1]])
-        excluded_df = PD.DataFrame(excluded_files,columns=['file','error'])
-        if not args.debug:
-            excluded_df.to_csv(exclude_path,index=False)
-    return files[good_index],start_times[good_index],end_times[good_index]
-
-def overlapping_start_times(start, end, step, overlap_frac):
-
-    # Define tracking variables
-    current_time = start
-    start_times  = []
-    end_times    = []
-
-    # Sanity check on step and overlap sizes
-    if overlap_frac >= 1:
-        raise ValueError("--t_overlap must be smaller than --t_window.")
-    else:
-        overlap = overlap_frac*step
-
-    # Loop over the time range using the start, end, and step values. But then backup by windowed overlap as need
-    while current_time <= end:
-        start_times.append(current_time)
-        if (current_time + step) < end:
-            end_times.append(current_time+step)
-        else:
-            end_times.append(end)
-        current_time = current_time + step - overlap
-    start_times = np.array(start_times)
-    end_times   = np.array(end_times)
-
-    # Find edge cases where taking large steps with small offsets means multiple slices that reach the end time
-    limiting_index = np.argwhere(end_times>=end).min()+1
-
-    return start_times[:limiting_index],end_times[:limiting_index]
 
 def make_help_str(idict):
     """
@@ -382,84 +331,21 @@ if __name__ == "__main__":
     start_times = np.array(start_times)
     end_times   = np.array(end_times)
 
-    # Get the useable files from the request
-    files, start_times, end_times = test_input_data(args,files,start_times,end_times)
-
-    # Shuffle data to get a better sampling of patients
-    shuffled_index = np.random.permutation(len(files))
-    files          = files[shuffled_index]
-    start_times    = start_times[shuffled_index]
-    end_times      = end_times[shuffled_index]
-
-    # Apply any file offset as needed
-    files       = files[args.n_offset:]
-    start_times = start_times[args.n_offset:]
-    end_times   = end_times[args.n_offset:]
-
-    # Limit file length as needed
-    if args.n_input > 0:
-        files       = files[:args.n_input]
-        start_times = start_times[:args.n_input]
-        end_times   = end_times[:args.n_input]
-
-    # Sort the results so we access any duplicate files (but different read times) in order
-    sorted_index = np.argsort(files)
-    files          = files[sorted_index]
-    start_times    = start_times[sorted_index]
-    end_times      = end_times[sorted_index]
-
-    # Get an approximate subject count
-    subnums = []
-    for ifile in files:
-        regex_match = re.match(r"(\D+)(\d+)", ifile)
-        subnums.append(int(regex_match.group(2)))
-    subcnt = np.unique(subnums).size
-    print(f"Assuming BIDS data, approximately {subcnt:04d} subjects loaded.")
-
-    # If using a sliding time window, duplicate inputs with the correct inputs
-    if args.t_window != None:
-        new_files = []
-        new_start = []
-        new_end   = []
-        for ifile in files:
-
-            # Read in just the header to get duration
-            if args.t_end == -1:
-                t_end = read_edf_header(ifile)['Duration']
-            else:
-                t_end = args.t_end
-
-            # Get the start time for the windows
-            if args.t_start == None:
-                t_start = 0
-            else:
-                t_start = args.t_start
-
-            for iwindow in args.t_window:
-                
-                # Get the list of windows start and end times
-                windowed_start, windowed_end = overlapping_start_times(t_start,t_end,iwindow,args.t_overlap)
-
-                # Loop over the new entries and tile the input lists as needed
-                for idx,istart in enumerate(windowed_start):
-                    new_files.append(ifile)
-                    new_start.append(istart)
-                    new_end.append(windowed_end[idx])
-        files       = new_files
-        start_times = new_start
-        end_times   = new_end 
+    # Curate the data inputs to get a valid (sub)set that maintains stratification of subjects
+    DC                            = data_curation(args,files,start_times,end_times)
+    files, start_times, end_times = DC.get_dataload()
 
     # Make configuration files as needed
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
     if args.preprocess_file == None and not args.no_preprocess_flag:
-        from modules.addons import preprocessing
+        from components.workflows.public import preprocessing
         dirpath              = args.outdir+"configs/"
         os.system("mkdir -p %s" %(dirpath))
         args.preprocess_file = dirpath+"preprocessing_"+timestamp+".yaml"
         config_handler       = make_config(preprocessing,args.preprocess_file)
         config_handler.create_config()
     if args.feature_file == None and not args.no_feature_flag:
-        from modules.addons import features
+        from components.features.public import features
         dirpath           = args.outdir+"configs/"
         os.system("mkdir -p %s" %(dirpath))
         args.feature_file = dirpath+"features_"+timestamp+".yaml"

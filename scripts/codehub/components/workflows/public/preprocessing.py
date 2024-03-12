@@ -17,9 +17,9 @@ from scipy.signal import resample_poly, butter, filtfilt
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import PathCompleter
 
-# Local imports
-from modules.core.config_loader import *
-from modules.core.error_logging import *
+# Import error logging (primarily for mne)
+from components.core.internal.error_logging import *
+from components.core.internal.config_loader import *
 
 class mne_processing:
 
@@ -370,6 +370,7 @@ class preprocessing:
                                 output_fs = method_args['output_hz']
                                 if input_fs == None or input_fs == output_fs:
                                     self.metadata[self.file_cntr]['fs'][ichannel] = output_fs
+                                fs = self.metadata[self.file_cntr]['fs']
 
                         # Recreate the dataframe
                         dataset = PD.DataFrame(np.column_stack(output),columns=dataset.columns)
