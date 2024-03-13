@@ -84,11 +84,18 @@ class channel_clean:
 
         self.clean_channel_map = []
         for ichannel in self.channels:
-            regex_match = re.match(r"(\D+)(\d+)(?!P$)", ichannel)
+            regex_match = re.match(r"(\D+)(\d+)(.)", ichannel)
             if regex_match != None:
+
+                # Make the new channel name
                 lead        = regex_match.group(1).replace("EEG", "").strip()
                 contact     = int(regex_match.group(2))
                 new_name    = f"{lead}{contact:02d}"
+
+                # Check the special character list for temple
+                if regex_match.group(3).lower() in ['p']:
+                    new_name = f"{new_name}{regex_match.group(3)}"
+
             else:
                 new_name = ichannel.replace("EEG","").replace("-REF","").strip()
             self.clean_channel_map.append(new_name.upper())
