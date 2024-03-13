@@ -6,6 +6,9 @@ import pandas as PD
 from pyedflib.highlevel import read_edf_header
 from sklearn.model_selection import train_test_split
 
+# Component imports
+from components.curation.public.data_loader import *
+
 class data_curation:
     """
     Class devoted to loading in raw data into the shared class instance.
@@ -78,13 +81,16 @@ class data_curation:
         indices = np.arange(nvals)
 
         # If we have more entries than our window size, enforce stratification
-        if nvals > window_size:
-            sorted_index,remain_index = train_test_split(indices,train_size=window_size,stratify=strat,random_state=42)
-            while remain_index.size > window_size:
-                current_index,remain_index = train_test_split(remain_index,train_size=window_size,stratify=strat[remain_index],random_state=42)
-                sorted_index               = np.concatenate((sorted_index,current_index))
-            sorted_index = np.concatenate((sorted_index,remain_index))
-        else:
+        try:
+            if nvals > window_size:
+                sorted_index,remain_index = train_test_split(indices,train_size=window_size,stratify=strat,random_state=42)
+                while remain_index.size > window_size:
+                    current_index,remain_index = train_test_split(remain_index,train_size=window_size,stratify=strat[remain_index],random_state=42)
+                    sorted_index               = np.concatenate((sorted_index,current_index))
+                sorted_index = np.concatenate((sorted_index,remain_index))
+            else:
+                sorted_index = indices.copy()
+        except:
             sorted_index = indices.copy()
 
         return sorted_index
@@ -179,6 +185,12 @@ class data_curation:
             self.files       = self.files[:self.args.n_input]
             self.start_times = self.start_times[:self.args.n_input]
             self.end_times   = self.end_times[:self.args.n_input]
+
+        # Sort the results to ensure data loads in order
+        sorted_index     = np.argsort(self.files)
+        self.files       = self.files[sorted_index]
+        self.start_times = self.start_times[sorted_index]
+        self.end_times   = self.end_times[sorted_index]
 
     def get_dataload(self):
         

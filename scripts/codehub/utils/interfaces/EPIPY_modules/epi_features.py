@@ -2,7 +2,7 @@ import os
 import dearpygui.dearpygui as dpg
 from configs.makeconfigs import *
 
-import modules.addons.features as FEATS
+import components.features.public.features as FEATS
 
 class epi_features_handler:
 

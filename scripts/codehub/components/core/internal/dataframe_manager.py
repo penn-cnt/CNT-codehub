@@ -38,8 +38,15 @@ class dataframe_manager:
         """
 
         # Get the columns to drop
-        drop_cols = np.setdiff1d(self.dataframe.columns,keep_columns)
+        drop_cols  = np.setdiff1d(self.dataframe.columns,keep_columns)
         self.dataframe = self.dataframe.drop(drop_cols, axis=1)
+
+        # Update the metadata to match
+        metadata_indices = [np.where(self.clean_channel_map==ival) for ival in self.dataframe.columns]
+        
+        for idx,ival in enumerate(self.channels):
+            print(ival,self.clean_channel_map[idx])
+        #print(metadata_indices)
 
     def montaged_dataframe(self,data,columns):
         """

@@ -56,6 +56,8 @@ class channel_clean:
         # Logic gates for different cleaning methods
         if clean_method.lower() == 'hup':
             self.clean_hup()
+        elif clean_method.lower() == 'temple':
+            self.clean_temple()
 
     def clean_hup(self):
         """
@@ -73,3 +75,21 @@ class channel_clean:
             else:
                 new_name = ichannel.replace("EEG","").replace("-REF","").strip()
             self.clean_channel_map.append(new_name.upper())
+        self.clean_channel_map = np.array(self.clean_channel_map)
+
+    def clean_temple(self):
+        """
+        Return the channel names for Temple data.
+        """
+
+        self.clean_channel_map = []
+        for ichannel in self.channels:
+            regex_match = re.match(r"(\D+)(\d+)(?!P$)", ichannel)
+            if regex_match != None:
+                lead        = regex_match.group(1).replace("EEG", "").strip()
+                contact     = int(regex_match.group(2))
+                new_name    = f"{lead}{contact:02d}"
+            else:
+                new_name = ichannel.replace("EEG","").replace("-REF","").strip()
+            self.clean_channel_map.append(new_name.upper())
+        self.clean_channel_map = np.array(self.clean_channel_map)       

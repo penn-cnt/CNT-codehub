@@ -5,10 +5,10 @@ import numpy as np
 import dearpygui.dearpygui as dpg
 
 # Local imports to get documentation
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.project_handler import *
+from components.workflows.public.channel_clean import *
+from components.workflows.public.channel_mapping import *
+from components.workflows.public.channel_montage import *
+from components.workflows.public.project_handler import *
 
 class callback_handler:
 

@@ -23,7 +23,7 @@ from components.core.internal.config_loader import *
 
 class mne_processing:
 
-    def __init__(self,dataset,fs,mne_channels):
+    def __init__(self,dataset,fs,mne_channels,fname):
         """
         MNE Initilization
 
@@ -40,7 +40,11 @@ class mne_processing:
         self.ppchannels   = list(dataset.columns)
         self.mne_channels = mne_channels
         self.errors       = []
-        
+
+        #for idx,ival in enumerate(self.ppchannels):
+        #    print(ival,fs[idx])
+        #print(fs)
+
         # Make sure that all of the frequencies match for mne
         if len(np.unique(fs)) == 1:
             self.fs = np.unique(fs)[0]
@@ -380,7 +384,8 @@ class preprocessing:
                         method_call = getattr(PU,method_name)
                         method_call(**method_args)
                     elif cls.__name__ == 'mne_processing':
-                        MP = mne_processing(dataset,fs,self.mne_channels)
+                        fname = self.metadata[self.file_cntr]['file']
+                        MP = mne_processing(dataset,fs,self.mne_channels,fname)
                         method_call = getattr(MP,method_name)
                         dataset     = method_call(**method_args)
         return dataset

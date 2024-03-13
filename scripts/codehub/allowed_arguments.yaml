@@ -6,6 +6,7 @@ allowed_datatypes:
     EDF: Read in EDF data.
 allowed_clean_args:
     HUP: Clean according to HUPs lead and channel format.
+    TEMPLE: Clean according to Temple's TUEG dataset.
 allowed_channel_args:
     HUP1020: Channels associated with a 10-20 montage performed at HUP.
     RAW: Use all possible channels. Warning, channels may not match across different datasets.
