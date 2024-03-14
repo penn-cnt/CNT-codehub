@@ -150,7 +150,6 @@ class project_handlers:
 
                 # Update the output list
                 output_manager.update_output_list(self,self.montaged_dataframe.values)
-                print(self.metadata)
 
     def imaging_basic(self):
         """
