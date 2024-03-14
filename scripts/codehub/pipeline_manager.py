@@ -85,18 +85,19 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         project_handlers.file_manager(self)
 
         # Select valid data slices
-        print(self.output_list)
         data_viability.__init__(self)
-        #print(self.metadata.keys())
 
-        # Pass to feature selection managers
-        self.feature_manager()
+        # In the case that all of the data is removed, skip the next steps
+        if len(self.metadata.keys()) > 0:
 
-        # Associate targets if requested
-        self.target_manager()
+            # Pass to feature selection managers
+            self.feature_manager()
 
-        # Save the results
-        output_manager.save_features(self)
+            # Associate targets if requested
+            self.target_manager()
+
+            # Save the results
+            output_manager.save_features(self)
 
     def feature_manager(self):
         """
