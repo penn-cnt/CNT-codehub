@@ -364,9 +364,13 @@ class preprocessing:
                         for ichannel in range(dataset.shape[1]):
 
                             # Perform preprocessing step
-                            namespace           = cls(dataset.values[:,ichannel],fs[ichannel])
-                            method_call         = getattr(namespace,method_name)
-                            output.append(method_call(**method_args))
+                            try:
+                                namespace           = cls(dataset.values[:,ichannel],fs[ichannel])
+                                method_call         = getattr(namespace,method_name)
+                                output.append(method_call(**method_args))
+                            except:
+                                # We need a flexible solution to errors, so just populating a nan array to be caught by the data validator
+                                output.append(np.nan*np.ones(dataset.shape[0]))
 
                             # Store the new frequencies if downsampling
                             if method_name == 'frequency_downsample':
@@ -384,9 +388,14 @@ class preprocessing:
                         method_call = getattr(PU,method_name)
                         method_call(**method_args)
                     elif cls.__name__ == 'mne_processing':
-                        fname = self.metadata[self.file_cntr]['file']
-                        MP = mne_processing(dataset,fs,self.mne_channels,fname)
-                        method_call = getattr(MP,method_name)
-                        dataset     = method_call(**method_args)
+                        
+                        try:
+                            # MNE requires special handling, so we send it the mne channels object (and filename for debugging)
+                            fname       = self.metadata[self.file_cntr]['file']
+                            MP          = mne_processing(dataset,fs,self.mne_channels,fname)
+                            method_call = getattr(MP,method_name)
+                            dataset     = method_call(**method_args)
+                        except:
+                            dataset *= np.nan
         return dataset
 

@@ -77,6 +77,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         # Initialize the output list so it can be updated with each file
         output_manager.__init__(self)
         
+        ##############################################
+        ##### Start the actual project workflows #####
+        ##############################################
+        
         # File management
         project_handlers.file_manager(self)
 
