@@ -137,7 +137,7 @@ class project_handlers:
 
             # Perform next steps only if we have a viable dataset
             if self.dataframe.shape[0] > int(max(self.metadata[self.file_cntr]['fs'])):
-                print("Pass")
+                print(self.metadata)
 
                 # Make the cleaned mne channel map
                 mne_channels      = mne.channels.make_standard_montage("standard_1020").ch_names
