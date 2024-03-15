@@ -70,6 +70,7 @@ if __name__ == '__main__':
     # Define the allowed enrichment information
     allowed_enrichment_types                = {}
     allowed_enrichment_types['TUEG_TSV_dt'] = 'Read in a TUEG tsv file and assign the target variable to a time window.'
+    allowed_enrichment_types['keypair']     = 'Add a keypair to the targets'
     allowed_enrichment_help                 = make_help_str(allowed_enrichment_types)
 
     # Command line options needed to obtain data.

@@ -43,7 +43,6 @@ class target_loader:
             
             # Load the data
             raw_targets = pickle.load(open(self.target_file,"rb"))
-            print(raw_targets)
 
             # Create the target columns as needed
             if type(raw_targets) == dict:

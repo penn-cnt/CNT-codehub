@@ -87,15 +87,14 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         # Select valid data slices
         data_viability.__init__(self)
 
-        # In the case that all of the data is removed, skip the next steps
+        # Pass to feature selection managers
+        self.feature_manager()
+
+        # Associate targets if requested
+        self.target_manager()
+
+        # In the case that all of the data is removed, skip write step
         if len(self.metadata.keys()) > 0:
-
-            # Pass to feature selection managers
-            self.feature_manager()
-
-            # Associate targets if requested
-            self.target_manager()
-
             # Save the results
             output_manager.save_features(self)
 
@@ -116,7 +115,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
                 if self.worker_number == 0:
                     sys.stdout.write("\033[H")
                     sys.stdout.flush()
-            features.__init__(self)
+
+            # In the case that all of the data is removed, skip the feature step
+            if len(self.metadata.keys()) > 0:
+                features.__init__(self)
 
     def target_manager(self):
         """
