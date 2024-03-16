@@ -180,7 +180,8 @@ class features:
                     for idx,dataset in enumerate(self.output_list):
                         
                         # Get the input frequencies
-                        fs = self.metadata[idx]['fs']
+                        metakeys = list(self.metadata.keys())
+                        fs       = self.metadata[metakeys[idx]]['fs']
 
                         # Loop over the channels and get the updated values
                         output = [] 
