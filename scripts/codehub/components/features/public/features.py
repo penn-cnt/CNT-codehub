@@ -179,9 +179,11 @@ class features:
                     # Loop over the datasets and the channels in each
                     for idx,dataset in enumerate(self.output_list):
                         
+                        # Grab the current meta data object
+                        imeta = self.metadata[self.output_meta[idx]]
+
                         # Get the input frequencies
-                        metakeys = list(self.metadata.keys())
-                        fs       = self.metadata[metakeys[idx]]['fs']
+                        fs = imeta['fs']
 
                         # Loop over the channels and get the updated values
                         output = [] 
@@ -200,7 +202,6 @@ class features:
                             output.append(result_a)
 
                         # Use metadata to allow proper feature grouping
-                        imeta    = self.metadata[idx]
                         meta_arr = [imeta['file'],imeta['t_start'],imeta['t_end'],imeta['dt'],method_name,result_b]
                         df_values.append(np.concatenate((meta_arr,output),axis=0))
 
