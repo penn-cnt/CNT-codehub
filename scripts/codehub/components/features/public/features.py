@@ -30,6 +30,11 @@ class signal_processing:
             float: Spectral energy
         """
 
+        # Add in the optional tagging to denote frequency range of this step
+        low_freq_str      = str(np.floor(low_freq))
+        hi_freq_str       = str(np.floor(hi_freq))
+        self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
+
         # Get the number of samples in each window for welch average and the overlap
         nperseg = int(float(win_size) * self.fs)
         noverlap = int(float(win_stride) * self.fs)
@@ -42,12 +47,7 @@ class signal_processing:
         mask            = (frequencies >= low_freq) & (frequencies <= hi_freq)
         spectral_energy = np.trapz(psd[mask], frequencies[mask])
 
-        # Add in the optional tagging to denote frequency range of this step
-        low_freq_str = str(np.floor(low_freq))
-        hi_freq_str  = str(np.floor(hi_freq))
-        optional_tag = '['+low_freq_str+','+hi_freq_str+']'
-
-        return spectral_energy,optional_tag
+        return spectral_energy,self.optional_tag
     
     def topographic_peaks(self,prominence_height,min_width,height_unit='zscore',width_unit='seconds',detrend_flag=False):
         """
@@ -64,6 +64,9 @@ class signal_processing:
             out (string): Underscore concatenated string of peak, left edge of peak, and right edge of peak
             tag (string): Underscore concatenated string of prominence height, width, and their unit types for this feature step.
         """
+
+        # Make the optional tag output
+        self.optional_tag = f"{prominence_height:.2f}_{height_unit}_{min_width:.2f}_{width_unit}_{detrend_flag}"
 
         # Detrend as needed
         if detrend_flag:
@@ -98,10 +101,9 @@ class signal_processing:
 
         # We can only return a single object that is readable by pandas, so pack results into a string to be broken down later by user
         out = f"{peak}_{lwidth}_{rwidth}"
-        tag = f"{prominence_height:.2f}_{height_unit}_{min_width:.2f}_{width_unit}_{detrend_flag}"
 
         # Return a tuple of (peak, left width, right width) to store all of the peak info
-        return out,tag
+        return out,self.optional_tag
 
 class basic_statistics:
 
@@ -204,7 +206,10 @@ class features:
                             except:
                                 # We need a flexible solution to errors, so just populating a nan value
                                 output.append(np.nan)
-                                result_b = np.nan
+                                try:
+                                    result_b = getattr(namespace,'optional_tag')
+                                except:
+                                    result_b = "None"
 
                         # Use metadata to allow proper feature grouping
                         meta_arr = [imeta['file'],imeta['t_start'],imeta['t_end'],imeta['dt'],method_name,result_b]
