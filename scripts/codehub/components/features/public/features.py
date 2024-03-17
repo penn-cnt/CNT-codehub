@@ -180,7 +180,7 @@ class features:
                     for idx,dataset in enumerate(self.output_list):
                         
                         # Grab the current meta data object
-                        imeta = self.metadata[self.output_meta[idx]]
+                        imeta = self.metadata[idx]
 
                         # Get the input frequencies
                         fs = imeta['fs']
