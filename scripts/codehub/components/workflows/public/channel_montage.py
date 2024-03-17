@@ -40,7 +40,7 @@ class channel_montage:
 
         # Update the frequencies if needed
         try:
-            metadata_handler.set_sampling_frequency(self.new_fs)
+            metadata_handler.set_sampling_frequency(self,self.new_fs)
         except NameError:
             pass
 
