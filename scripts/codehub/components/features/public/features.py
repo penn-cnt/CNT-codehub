@@ -196,10 +196,15 @@ class features:
                                     pass
 
                             # Perform preprocessing step
-                            namespace           = cls(dataset[:,ichannel],fs[ichannel])
-                            method_call         = getattr(namespace,method_name)
-                            result_a, result_b  = method_call(**method_args)
-                            output.append(result_a)
+                            try:
+                                namespace           = cls(dataset[:,ichannel],fs[ichannel])
+                                method_call         = getattr(namespace,method_name)
+                                result_a, result_b  = method_call(**method_args)
+                                output.append(result_a)
+                            except:
+                                # We need a flexible solution to errors, so just populating a nan value
+                                output.append(np.nan)
+                                result_b = np.nan
 
                         # Use metadata to allow proper feature grouping
                         meta_arr = [imeta['file'],imeta['t_start'],imeta['t_end'],imeta['dt'],method_name,result_b]
