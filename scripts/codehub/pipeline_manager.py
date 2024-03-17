@@ -89,7 +89,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
 
         # Consolidate the metadata for failed chunks and successful chunks, and squeeze the successful object to match output list
         bad_metadata_keys = np.setdiff1d(list(self.metadata.keys()),self.output_meta)
-        bad_metadata      = self.metadata[bad_metadata_keys]
+        if bad_metadata_keys.size > 0:
+            bad_metadata = self.metadata[bad_metadata_keys]
+        else:
+            bad_metadata = {}
         for idx,ikey in enumerate(self.output_meta):
             self.metadata[idx] = self.metadata.pop(ikey)
 
