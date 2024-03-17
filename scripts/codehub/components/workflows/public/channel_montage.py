@@ -38,6 +38,12 @@ class channel_montage:
         # Update the metadata to note the montage channels
         metadata_handler.set_montage_channels(self,self.montage_channels)
 
+        # Update the frequencies if needed
+        try:
+            metadata_handler.set_sampling_frequency(self.new_fs)
+        except NameError:
+            pass
+
         return PD.DataFrame(montage_data,columns=self.montage_channels)
 
     def direct_inputs(self,DF,montage):
@@ -144,16 +150,33 @@ class channel_montage:
                          ['P04','O02'],
                          ['FZ','CZ']]
         
+        # Get the frequency array to reference and create the new output object
+        fs          = self.metadata[self.file_cntr]['fs']
+        self.new_fs = []
+
         # Get the new values to pass to the dataframe class
         montage_data = np.zeros((self.dataframe_to_montage.shape[0],len(bipolar_array))).astype('float64')
         for ii,ival in enumerate(bipolar_array):
+
+            # Update the data array
             try:
                 montage_data[:,ii] = self.dataframe_to_montage[ival[0]].values-self.dataframe_to_montage[ival[1]].values
             except KeyError:
                 montage_data[:,ii] = np.nan
 
+            # Update the frequency
+            try:
+                fs0 = fs[np.where(self.dataframe.columns==ival[0])[0][0]]
+                fs1 = fs[np.where(self.dataframe.columns==ival[1])[0][0]]
+                if fs0 == fs1:
+                    self.new_fs.append(fs0)
+                else:
+                    raise ValueError("Cannot montage channels with different frequencies.")
+            except IndexError:
+                self.new_fs.append(np.nan)
+
         # Get the new montage channel labels
         self.montage_channels = [f"{ichannel[0]}-{ichannel[1]}" for ichannel in bipolar_array]
 
         # Pass the data to the dataframe class function for montages
-        return montage_data
+        return montage_data 
