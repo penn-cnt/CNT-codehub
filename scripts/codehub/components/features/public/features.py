@@ -27,7 +27,8 @@ class signal_processing:
             win_stride (float, optional): Window overlap in units of sampling frequency. Defaults to 1.
 
         Returns:
-            float: Spectral energy
+            spectral_energy (float): Spectral energy within the frequency band.
+            optional_tag (string): Unique identifier that is added to the output dataframe to show the frequency window for which a welch spectral energy was calculated.
         """
 
         # Add in the optional tagging to denote frequency range of this step
@@ -62,7 +63,7 @@ class signal_processing:
 
         Returns:
             out (string): Underscore concatenated string of peak, left edge of peak, and right edge of peak
-            tag (string): Underscore concatenated string of prominence height, width, and their unit types for this feature step.
+            optional_tag (string): Underscore concatenated string of prominence height, width, and their unit types for this feature step to unique identify the feature.
         """
 
         # Make the optional tag output
@@ -236,9 +237,3 @@ class features:
                             self.feature_df[ichannel]=self.feature_df[ichannel].astype('float32')
                         except ValueError:
                             pass
-
-
-
-    def feature_aggregation(self):
-
-        pass
