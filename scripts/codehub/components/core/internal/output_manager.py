@@ -47,6 +47,7 @@ class output_manager:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
             pickle.dump(self.metadata,open("%s/%s_meta_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
             pickle.dump(self.feature_df,open("%s/%s_features_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
+            pickle.dump(self.feature_commands,open("%s/%s_fconfigs_%s.pickle" %(self.args.outdir,timestamp,self.unique_id),"wb"))
 
     def save_output_list(self):
         """
