@@ -15,9 +15,9 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
             t1_array  = t1[irow].split('_')
             tag_array = tag[irow].split('_') 
         except:
-            print(t0)
-            print(t1)
-            print(tag)
+            print(t0[irow])
+            print(t1[irow])
+            print(tag[irow])
             exit()
 
         # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
