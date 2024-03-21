@@ -6,7 +6,10 @@ from sys import argv,exit
 
 def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
 
+    #TUEG_dt_t0                                 42.0_87.0_117.0_246.0
+    #TUEG_dt_t1
 
+    pass
 
 if __name__ == '__main__':
 
