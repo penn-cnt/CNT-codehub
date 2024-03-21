@@ -18,4 +18,9 @@ if __name__ == '__main__':
 
     # Make the output dataframe object
     output = PD.DataFrame(columns=yaml_dict.keys())
-    print(output)
+    
+    # Loop over input files and read in their data
+    for ifile in files:
+        iDF = PD.read_pickle(files[0])
+        print(ifile)
+        print(iDF.columns)
