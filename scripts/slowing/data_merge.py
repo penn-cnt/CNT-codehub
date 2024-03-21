@@ -39,6 +39,6 @@ if __name__ == '__main__':
         ### Temple Data
         varname = 'TUEG_dt_tag'
         if varname in target_sources and varname in iDF.columns:
-            indices = iDF.loc[iDF[varname]!=None].index
-            print(iDF[indices])
+            mask = (iDF[varname].values!=None)
+            print(iDF.iloc[mask])
             exit()
