@@ -4,10 +4,11 @@ import inspect
 import numpy as np
 import pandas as PD
 from tqdm import tqdm
-from scipy.signal import welch
+from scipy.signal import welch, find_peaks, detrend
 
-# Local imports
-from modules.core.config_loader import *
+# Import error logging (primarily for mne)
+from components.core.internal.config_loader import *
+from components.metadata.public.metadata_handler import *
 
 class signal_processing:
     
@@ -26,8 +27,14 @@ class signal_processing:
             win_stride (float, optional): Window overlap in units of sampling frequency. Defaults to 1.
 
         Returns:
-            float: Spectral energy
+            spectral_energy (float): Spectral energy within the frequency band.
+            optional_tag (string): Unique identifier that is added to the output dataframe to show the frequency window for which a welch spectral energy was calculated.
         """
+
+        # Add in the optional tagging to denote frequency range of this step
+        low_freq_str      = str(np.floor(low_freq))
+        hi_freq_str       = str(np.floor(hi_freq))
+        self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
 
         # Get the number of samples in each window for welch average and the overlap
         nperseg = int(float(win_size) * self.fs)
@@ -41,12 +48,89 @@ class signal_processing:
         mask            = (frequencies >= low_freq) & (frequencies <= hi_freq)
         spectral_energy = np.trapz(psd[mask], frequencies[mask])
 
-        # Add in the optional tagging to denote frequency range of this step
-        low_freq_str = str(np.floor(low_freq))
-        hi_freq_str  = str(np.floor(hi_freq))
-        optional_tag = '['+low_freq_str+','+hi_freq_str+']'
+        return spectral_energy,self.optional_tag
+    
+    def topographic_peaks(self,prominence_height,min_width,height_unit='zscore',width_unit='seconds',detrend_flag=False):
+        """
+        Find the topographic peaks in channel data. This is a naive/fast way of finding spikes or slowing.
 
-        return spectral_energy,optional_tag
+        Args:
+            prominence_height (_type_): Prominence threshold.
+            min_width (_type_): Minimum width of peak.
+            height_unit (str, optional): Unit for prominence height. zscore=Height by zscore. Else, absolute height. Defaults to 'zscore'.
+            width_unit (str, optional): Unit for width of peaks. 'seconds'=width in seconds. Else, width in bins. Defaults to 'seconds'.
+            detrend_flag (bool, optional): Detrend the data before searching for peaks. Defaults to False.
+
+        Returns:
+            out (string): Underscore concatenated string of peak, left edge of peak, and right edge of peak
+            optional_tag (string): Underscore concatenated string of prominence height, width, and their unit types for this feature step to unique identify the feature.
+        """
+
+        # Make the optional tag output
+        self.optional_tag = f"{prominence_height:.2f}_{height_unit}_{min_width:.2f}_{width_unit}_{detrend_flag}"
+
+        # Detrend as needed
+        if detrend_flag:
+            data = detrend(self.data)
+        else:
+            data = np.copy(self.data)
+
+        # Recast height into a pure number as needed
+        if height_unit == 'zscore':
+            prominence_height_input = np.median(data)+prominence_height*np.std(data)
+        else:
+            prominence_height_input = prominence_height
+
+        # Recast width into a pure number as needed
+        if width_unit == 'seconds':
+            min_width_input = min_width*self.fs
+        else:
+            min_width_input = min_width
+
+        # Calculate the peak info
+        output = find_peaks(data,prominence=prominence_height_input,width=min_width_input)
+
+        # Get peak info
+        try:
+            peak       = output[0][0]
+            lwidth     = peak-output[1]['left_ips'][0]
+            rwidth     = output[1]['right_ips'][0]-peak
+        except IndexError:
+            peak   = np.nan
+            lwidth = np.nan
+            rwidth = np.nan
+
+        # We can only return a single object that is readable by pandas, so pack results into a string to be broken down later by user
+        out = f"{peak}_{lwidth}_{rwidth}"
+
+        # Return a tuple of (peak, left width, right width) to store all of the peak info
+        return out,self.optional_tag
+
+class basic_statistics:
+
+    def __init__(self, data, fs):
+        self.data = data
+        self.fs   = fs
+
+    def median(self):
+        """
+        Returns the median value in a channel.
+
+        Returns:
+            float: Median channel intensity.
+        """
+
+        return np.median(self.data),'median'
+    
+    def stdev(self):
+        """
+        Returns the standard deviation in a channel.
+
+        Returns:
+            float: Standard deviation in a channel.
+        """
+
+        return np.std(self.data),'stdev'
 
 class features:
     """
@@ -98,8 +182,11 @@ class features:
                     # Loop over the datasets and the channels in each
                     for idx,dataset in enumerate(self.output_list):
                         
+                        # Grab the current meta data object
+                        imeta = self.metadata[idx]
+
                         # Get the input frequencies
-                        fs = self.metadata[idx]['fs']
+                        fs = imeta['fs']
 
                         # Loop over the channels and get the updated values
                         output = [] 
@@ -112,13 +199,20 @@ class features:
                                     pass
 
                             # Perform preprocessing step
-                            namespace           = cls(dataset[:,ichannel],fs[ichannel])
-                            method_call         = getattr(namespace,method_name)
-                            result_a, result_b  = method_call(**method_args)
-                            output.append(result_a)
+                            try:
+                                namespace           = cls(dataset[:,ichannel],fs[ichannel])
+                                method_call         = getattr(namespace,method_name)
+                                result_a, result_b  = method_call(**method_args)
+                                output.append(result_a)
+                            except:
+                                # We need a flexible solution to errors, so just populating a nan value
+                                output.append(np.nan)
+                                try:
+                                    result_b = getattr(namespace,'optional_tag')
+                                except:
+                                    result_b = "None"
 
                         # Use metadata to allow proper feature grouping
-                        imeta    = self.metadata[idx]
                         meta_arr = [imeta['file'],imeta['t_start'],imeta['t_end'],imeta['dt'],method_name,result_b]
                         df_values.append(np.concatenate((meta_arr,output),axis=0))
 
@@ -143,9 +237,3 @@ class features:
                             self.feature_df[ichannel]=self.feature_df[ichannel].astype('float32')
                         except ValueError:
                             pass
-
-
-
-    def feature_aggregation(self):
-
-        pass

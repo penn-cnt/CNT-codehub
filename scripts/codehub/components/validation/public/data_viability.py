@@ -3,20 +3,8 @@ import numpy as np
 import pandas as PD
 from sys import exit
 
-# Import the add on classes
-from modules.addons.data_loader import *
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.preprocessing import *
-from modules.addons.features import *
-
-# Import the core classes
-from modules.core.metadata_handler import *
-from modules.core.target_loader import *
-from modules.core.dataframe_manager import *
-from modules.core.output_manager import *
-from modules.core.data_viability import *
+# Component imports
+from components.metadata.public.metadata_handler import *
 
 class data_viability:
     """
@@ -77,43 +65,10 @@ class data_viability:
             # Copying results. Kept as two variables for possible disambiguation later.
             self.output_list = self.viable_data.copy()
 
-    def viable_dataset(self,data_array):
-        """
-        Flag if the !dataset! has any bad data and exclude the dataset.
+    ##########################
+    #### Helper Functions ####
+    ##########################
 
-        Args:
-            data_array (array): Data array.
-
-        Returns:
-            Single boolean flag. True=Keep. False=Drop.
-        """
-        
-        # Loop over the index associated with the datasets and keep only datasets without NaNs
-        return ~np.isnan(data_array).any()
-
-
-    def viable_columns(self,data_array):
-        """
-        Flag if a !channel! has any bad data and exclude the channel.
-
-        Args:
-            data_array (array): Data array.
-
-        Returns:
-            Boolean mask for column array.
-        """
-
-        # Loop over the index associated with the columns and only return columns without NaNs
-        keep_index = []
-        for i_index in range(data_array.shape[1]):
-            idata = data_array[:,i_index]
-            if ~np.isnan(idata).any():
-                keep_index.append(True)
-            else:
-                keep_index.append(False)
-
-        return keep_index
-    
     def consecutive_counter(self,iarr,ival):
         """
         Counts the number of consecutive instances of a value in an array. Returns a mask for trains less than argument set number.
@@ -179,3 +134,45 @@ class data_viability:
             # Insert new values into the original data array
             data_array[:,icol] = vals
         return data_array
+
+    ###################################
+    #### User Provided Logic Below ####
+    ###################################
+
+    def viable_dataset(self,data_array):
+        """
+        Flag if the !dataset! has any bad data and exclude the dataset.
+
+        Args:
+            data_array (array): Data array.
+
+        Returns:
+            Single boolean flag. True=Keep. False=Drop.
+        """
+        
+        # Loop over the index associated with the datasets and keep only datasets without NaNs
+        return ~np.isnan(data_array).any()
+
+
+    def viable_columns(self,data_array):
+        """
+        Flag if a !channel! has any bad data and exclude the channel.
+
+        Args:
+            data_array (array): Data array.
+
+        Returns:
+            Boolean mask for column array.
+        """
+
+        # Loop over the index associated with the columns and only return columns without NaNs
+        keep_index = []
+        for i_index in range(data_array.shape[1]):
+            idata = data_array[:,i_index]
+            if ~np.isnan(idata).any():
+                keep_index.append(True)
+            else:
+                keep_index.append(False)
+
+        return keep_index
+    

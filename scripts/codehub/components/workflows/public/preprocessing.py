@@ -13,13 +13,17 @@ from mne_icalabel import label_components
 from pyedflib import EdfWriter,FILETYPE_EDFPLUS
 from scipy.signal import resample_poly, butter, filtfilt
 
-# Local imports
-from modules.core.config_loader import *
-from modules.core.error_logging import *
+# File completion libraries
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import PathCompleter
+
+# Import error logging (primarily for mne)
+from components.core.internal.error_logging import *
+from components.core.internal.config_loader import *
 
 class mne_processing:
 
-    def __init__(self,dataset,fs,mne_channels):
+    def __init__(self,dataset,fs,mne_channels,fname):
         """
         MNE Initilization
 
@@ -36,7 +40,11 @@ class mne_processing:
         self.ppchannels   = list(dataset.columns)
         self.mne_channels = mne_channels
         self.errors       = []
-        
+
+        #for idx,ival in enumerate(self.ppchannels):
+        #    print(ival,fs[idx])
+        #print(fs)
+
         # Make sure that all of the frequencies match for mne
         if len(np.unique(fs)) == 1:
             self.fs = np.unique(fs)[0]
@@ -60,6 +68,14 @@ class mne_processing:
         # Set components if needed
         if n_components == None:
             n_components = len(self.ppchannels)
+
+        # Make sure that the config file can be found. Easy to forget since it is given by a config file.
+        if not os.path.exists(config_path):
+            print(f"Unable to find {config_path}.")
+            completer   = PathCompleter()
+            config_path = prompt("Please enter path to MNE config file. (Q/q to quit.) ", completer=completer)
+            if config_path.lower() == 'q':
+                raise FileNotFoundError("No valid MNE channel configuration file provided. Quitting.")
 
         # Get the channel mappings in mne compliant form
         mapping      = yaml.safe_load(open(config_path,'r'))
@@ -348,9 +364,13 @@ class preprocessing:
                         for ichannel in range(dataset.shape[1]):
 
                             # Perform preprocessing step
-                            namespace           = cls(dataset.values[:,ichannel],fs[ichannel])
-                            method_call         = getattr(namespace,method_name)
-                            output.append(method_call(**method_args))
+                            try:
+                                namespace           = cls(dataset.values[:,ichannel],fs[ichannel])
+                                method_call         = getattr(namespace,method_name)
+                                output.append(method_call(**method_args))
+                            except:
+                                # We need a flexible solution to errors, so just populating a nan array to be caught by the data validator
+                                output.append(np.nan*np.ones(dataset.shape[0]))
 
                             # Store the new frequencies if downsampling
                             if method_name == 'frequency_downsample':
@@ -358,6 +378,7 @@ class preprocessing:
                                 output_fs = method_args['output_hz']
                                 if input_fs == None or input_fs == output_fs:
                                     self.metadata[self.file_cntr]['fs'][ichannel] = output_fs
+                                fs = self.metadata[self.file_cntr]['fs']
 
                         # Recreate the dataframe
                         dataset = PD.DataFrame(np.column_stack(output),columns=dataset.columns)
@@ -367,8 +388,14 @@ class preprocessing:
                         method_call = getattr(PU,method_name)
                         method_call(**method_args)
                     elif cls.__name__ == 'mne_processing':
-                        MP = mne_processing(dataset,fs,self.mne_channels)
-                        method_call = getattr(MP,method_name)
-                        dataset     = method_call(**method_args)
+                        
+                        try:
+                            # MNE requires special handling, so we send it the mne channels object (and filename for debugging)
+                            fname       = self.metadata[self.file_cntr]['file']
+                            MP          = mne_processing(dataset,fs,self.mne_channels,fname)
+                            method_call = getattr(MP,method_name)
+                            dataset     = method_call(**method_args)
+                        except:
+                            dataset *= np.nan
         return dataset
 

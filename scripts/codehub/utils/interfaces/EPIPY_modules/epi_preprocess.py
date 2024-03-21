@@ -2,7 +2,7 @@ import os
 import dearpygui.dearpygui as dpg
 from configs.makeconfigs import *
 
-import modules.addons.preprocessing as PP
+import components.workflows.public.preprocessing as PP
 
 class epi_preprocess_handler:
 

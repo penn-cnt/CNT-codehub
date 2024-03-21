@@ -17,10 +17,10 @@ import matplotlib.pyplot as PLT
 from matplotlib.ticker import MultipleLocator
 
 # Local imports
-from modules.addons.data_loader import *
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
+from components.curation.public.data_loader import *
+from components.workflows.public.channel_clean import *
+from components.workflows.public.channel_mapping import *
+from components.workflows.public.channel_montage import *
 
 #################
 #### Classes ####

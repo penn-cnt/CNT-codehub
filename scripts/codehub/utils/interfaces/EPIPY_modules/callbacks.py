@@ -5,10 +5,10 @@ import numpy as np
 import dearpygui.dearpygui as dpg
 
 # Local imports to get documentation
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.project_handler import *
+from components.workflows.public.channel_clean import *
+from components.workflows.public.channel_mapping import *
+from components.workflows.public.channel_montage import *
+from components.workflows.public.project_handler import *
 
 class callback_handler:
 
@@ -410,7 +410,7 @@ class callback_handler:
                         base_cmd = f"{base_cmd} Please select a file or uncheck this option for runtime generation."
                         break
                     else:
-                        base_cmd = f"{base_cmd} --feature_file {preprocess_fpath}"
+                        base_cmd = f"{base_cmd} --feature_file {features_fpath}"
             else:
                 base_cmd = f"{base_cmd} --no_feature_flag"
 

@@ -2,20 +2,8 @@
 import numpy as np
 import pandas as PD
 
-# Import the add on classes
-from modules.addons.data_loader import *
-from modules.addons.channel_clean import *
-from modules.addons.channel_mapping import *
-from modules.addons.channel_montage import *
-from modules.addons.preprocessing import *
-from modules.addons.features import *
-
-# Import the core classes
-from modules.core.metadata_handler import *
-from modules.core.target_loader import *
-from modules.core.dataframe_manager import *
-from modules.core.output_manager import *
-from modules.core.data_viability import *
+# Component imports
+from components.metadata.public.metadata_handler import *
 
 class channel_mapping:
     """
@@ -90,5 +78,5 @@ class channel_mapping:
 
         self.master_channel_list  = ['C03', 'C04', 'CZ', 'F03', 'F04', 'F07', 'F08', 'FZ', 'FP01', 'FP02', 'O01',
                                     'O02', 'P03', 'P04', 'T03', 'T04', 'T05', 'T06']
-        self.channel_map_out      = np.intersect1d(self.clean_channel_map,self.master_channel_list)
+        self.channel_map_out      = np.array(np.intersect1d(self.clean_channel_map,self.master_channel_list))
         self.channel_map_out_inds = np.where(np.isin(self.clean_channel_map, self.channel_map_out))[0]

@@ -18,3 +18,25 @@ spectral_energy_welch:
     win_stride:
         - 1
         - 1
+
+median:
+    step_nums:
+        - 3
+
+stdev:
+    step_nums:
+        - 4
+
+topographic_peaks:
+    step_nums:
+        - 5
+    prominence_height:
+        - 2
+    height_unit:
+        - zscore
+    min_width:
+        - 1
+    width_unit:
+        - seconds
+    detrend_flag:
+        - True
