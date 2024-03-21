@@ -62,7 +62,7 @@ if __name__ == '__main__':
         ### Temple Data
         varname = 'TUEG_dt_tag'
         if varname in target_sources and varname in iDF.columns:
-            mask    = (iDF[varname].values!=None)
+            mask    = (iDF[varname].values!='None')
             t_start = iDF['t_start'].astype('float').values[mask]
             t_end   = iDF['t_end'].astype('float').values[mask]
             t0      = iDF['TUEG_dt_t0'].values[mask]
