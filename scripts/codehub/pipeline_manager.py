@@ -284,7 +284,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     feature_group.add_argument("--feature_file", type=str,  help="Path to preprocessing YAML file. If not provided, code will walk user through generation of a pipeline.")
 
     target_group = parser.add_argument_group('Target Association Options')
-    target_group.add_argument("--targets", action='store_true', default=True, help="Join target data with the final dataframe")
+    target_group.add_argument("--targets", action='store_true', default=False, help="Join target data with the final dataframe")
 
     output_group = parser.add_argument_group('Output Options')
     output_group.add_argument("--outdir", type=str,  required=require_flag, help="Output directory.") 
@@ -413,7 +413,8 @@ if __name__ == "__main__":
         regex_match = re.match(r"(\D+)(\d+)", ifile)
         subnums.append(int(regex_match.group(2)))
     subcnt = np.unique(subnums).size
-    print(f"Assuming BIDS data, approximately {subcnt:04d} subjects loaded.")
+    if not args.silent:
+        print(f"Assuming BIDS data, approximately {subcnt:04d} subjects loaded.")
 
     # If using a sliding time window, duplicate inputs with the correct inputs
     if args.t_window != None:

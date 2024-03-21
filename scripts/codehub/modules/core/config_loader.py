@@ -23,7 +23,7 @@ class config_loader:
                             if isinstance(lvalue,list):
                                 config[ikey][jkey][lkey] = self.str_handler(lvalue)
                             else:
-                                config[ikey][jkey][lkey] = self.str_handler([lvalue])[0] 
+                                config[ikey][jkey][lkey] = self.str_handler([lvalue])[0]
             self.yaml_step = config
         else:
             # Read in and typecast the yaml file
@@ -97,6 +97,7 @@ class config_loader:
                     values[idx] = None
                 elif ivalue[0] == '[':
                     values[idx] = ast.literal_eval(ivalue)
+        return values
 
     def convert_to_step(self):
         """
