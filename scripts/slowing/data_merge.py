@@ -18,10 +18,19 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
         tagflag     = True
         time_window = np.around(np.arange(t_start[irow],t_end[irow],0.1),1)
         for ii in range(len(t0_array)):
+            testsum = 0
             tag_window = np.around(np.arange(float(t0_array[ii]),float(t1_array[ii]),0.1),1)
             if np.intersect1d(time_window,tag_window).size > 0:
                 output.append(tag_array[ii])
                 flag = False
+                testsum+=1
+            if testsum > 1:
+                print(t_start)
+                print(t_end)
+                print(t0)
+                print(t1)
+                print(tag)
+                exit()
         if tagflag:
             output.append("INTERSLOW")
     return output
@@ -50,7 +59,7 @@ if __name__ == '__main__':
         
         # Read in the data
         iDF           = PD.read_pickle(ifile)
-        iDF['target'] = np.nan
+        iDF['target'] = "UNKNOWN"
 
         # Handle some of the unique logic cases for cleanup
         ### Temple Data
