@@ -23,8 +23,8 @@ if __name__ == '__main__':
     # Read in the mapping file from yaml
     yaml_dict = yaml.safe_load(open(argv[2],'r'))
 
-    print(yaml_dict['target']['sources'])
-    exit()
+    # Get the target sources
+    target_sources = yaml_dict['target']['sources']
 
     # Make the output dataframe object
     output = PD.DataFrame(columns=yaml_dict.keys())
@@ -37,5 +37,7 @@ if __name__ == '__main__':
 
         # Handle some of the unique logic cases for cleanup
         ### Temple Data
-        if 'TUEG_dt_tag' in yaml_dict['target']['sources']:
-            print("hi")
+        varname = 'TUEG_dt_tag'
+        if varname in target_sources and varname in iDF.columns:
+            print(iDF[varname].unique())
+            exit()
