@@ -73,6 +73,6 @@ tag:
     - type: int
     - map: True
 target:
-    - sources:
+    sources:
         - tueg_string
         - TUEG_dt_tag
