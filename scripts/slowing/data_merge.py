@@ -15,12 +15,17 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
         tag_array = tag[irow].split('_') 
 
         # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
+        tagflag     = True
         time_window = np.around(np.arange(t_start[irow],t_end[irow],0.1),1)
         for ii in range(len(t0_array)):
             tag_window = np.around(np.arange(float(t0_array[ii]),float(t1_array[ii]),0.1),1)
             if np.intersect1d(time_window,tag_window).size > 0:
-                print(tag_array[ii])
-                exit()
+                output.append(tag_array[ii])
+                flag = False
+        if tagflag:
+            output.append("INTERSLOW")
+    return output
+
 
 if __name__ == '__main__':
 
@@ -57,5 +62,8 @@ if __name__ == '__main__':
             t0      = iDF['TUEG_dt_t0'].values[mask]
             t1      = iDF['TUEG_dt_t1'].values[mask]
             tags    = iDF[varname].values
-            TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
+            targets = TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
+            iDF['target'].iloc[mask] = targets
+            
+            print(iDF)
             exit()
