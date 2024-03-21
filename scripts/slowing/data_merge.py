@@ -55,24 +55,8 @@ if __name__ == '__main__':
         iDF           = PD.read_pickle(ifile)
         iDF['target'] = "UNKNOWN"
 
-        for varname in target_sources:
-            # Handle some of the unique logic cases for cleanup
-            ### Temple Data
-            if varname == 'TUEG_dt_tag' and varname in iDF.columns:
-                mask    = (iDF[varname].values!=None)
-                t_start = iDF['t_start'].astype('float').values[mask]
-                t_end   = iDF['t_end'].astype('float').values[mask]
-                t0      = iDF['TUEG_dt_t0'].values[mask]
-                t1      = iDF['TUEG_dt_t1'].values[mask]
-                tags    = iDF[varname].values[mask]
-                newvals = TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
-                targets = iDF['target'].values
-                targets[mask] = newvals
-                iDF['target'].iloc[mask] = targets
-                print(iDF)
-                exit()
-            elif varname == 'tueg_string' and varname in iDF.columns:
-                mask    = (iDF[varname].values!=None)
-                iDF['target'].iloc[mask] = iDF[varname].values[mask]
-                print(iDF)
-                exit()
+        # Loop over the entires to clean up the targets
+        for irow in iDF:
+            
+            print(irow)
+            exit()
