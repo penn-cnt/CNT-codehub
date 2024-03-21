@@ -10,9 +10,15 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
     output = []
     for irow in range(len(t_start)):
         # Break up the temple strings
-        t0_array  = t0[irow].split('_')
-        t1_array  = t1[irow].split('_')
-        tag_array = tag[irow].split('_') 
+        try:
+            t0_array  = t0[irow].split('_')
+            t1_array  = t1[irow].split('_')
+            tag_array = tag[irow].split('_') 
+        except:
+            print(t0)
+            print(t1)
+            print(tag)
+            exit()
 
         # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
         tagflag     = True
