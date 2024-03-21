@@ -39,5 +39,6 @@ if __name__ == '__main__':
         ### Temple Data
         varname = 'TUEG_dt_tag'
         if varname in target_sources and varname in iDF.columns:
-            print(iDF[varname].unique())
+            indices = iDF.loc[iDF[varname]!=None].index
+            print(iDF[indices])
             exit()
