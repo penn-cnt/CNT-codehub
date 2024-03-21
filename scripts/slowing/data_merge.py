@@ -6,10 +6,21 @@ from sys import argv,exit
 
 def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
 
-    #TUEG_dt_t0                                 42.0_87.0_117.0_246.0
-    #TUEG_dt_t1
+    # Loop over the arrays
+    output = []
+    for irow in len(t_start):
+        # Break up the temple strings
+        t0_array  = t0[irow].split('_')
+        t1_array  = t1[irow].split('_')
+        tag_array = tag[irow].split('_') 
 
-    pass
+        # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
+        time_window = np.around(np.arange(t_start[irow],t_end[irow],0.1),1)
+        for ii in range(len(t0_array)):
+            tag_window = np.around(np.arange(t0_array[ii],t1_array[ii],0.1),1)
+            if np.intersect1d(time_window,tag_window).size > 0:
+                print(tag_array[ii])
+                exit()
 
 if __name__ == '__main__':
 
@@ -33,12 +44,18 @@ if __name__ == '__main__':
     for ifile in files:
         
         # Read in the data
-        iDF = PD.read_pickle(ifile)
+        iDF           = PD.read_pickle(ifile)
+        iDF['target'] = np.nan
 
         # Handle some of the unique logic cases for cleanup
         ### Temple Data
         varname = 'TUEG_dt_tag'
         if varname in target_sources and varname in iDF.columns:
-            mask = (iDF[varname].values!=None)
-            print(iDF.iloc[mask])
+            mask    = (iDF[varname].values!=None)
+            t_start = iDF['t_start'].values[mask]
+            t_end   = iDF['t_end'].values[mask]
+            t0      = iDF['TUEG_dt_t0'].values[mask]
+            t1      = iDF['TUEG_dt_t1'].values[mask]
+            tags    = iDF[varname].values
+            TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag)
             exit()
