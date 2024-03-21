@@ -72,6 +72,7 @@ method:
 tag:
     - type: int
     - map: True
-tueg_string:
-    - type: int
-    - map: True
+target:
+    - sources:
+        - tueg_string
+        - TUEG_dt_tag
