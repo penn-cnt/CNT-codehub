@@ -36,6 +36,7 @@ if __name__ == '__main__':
 
     # Find all the feature dataframes
     files = glob(f"{rootdir}*features*pickle")
+    files = ['/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/slowing/outputs/2024-03-18_11-05_features_adfb8c88-4868-4662-bc65-ad2effaa3eeb.pickle']
     
     # Read in the mapping file from yaml
     yaml_dict = yaml.safe_load(open(argv[2],'r'))
