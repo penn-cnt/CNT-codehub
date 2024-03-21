@@ -65,8 +65,12 @@ if __name__ == '__main__':
                 t0      = iDF['TUEG_dt_t0'].values[mask]
                 t1      = iDF['TUEG_dt_t1'].values[mask]
                 tags    = iDF[varname].values[mask]
-                targets = TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
+                newvals = TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
+                targets = iDF['target'].values
+                targets[mask] = newvals
                 iDF['target'].iloc[mask] = targets
+                print(iDF)
+                exit()
             elif varname == 'tueg_string' and varname in iDF.columns:
                 mask    = (iDF[varname].values!=None)
                 iDF['target'].iloc[mask] = iDF[varname].values[mask]
