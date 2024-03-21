@@ -8,6 +8,7 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
 
     # Loop over the arrays
     output = []
+    print(len(t_start))
     for irow in range(len(t_start)):
         # Break up the temple strings
         t0_array  = t0[irow].split('_')
@@ -33,7 +34,7 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
                 exit()
         if tagflag:
             output.append("INTERSLOW")
-    return output
+    return np.array(output)
 
 
 if __name__ == '__main__':
