@@ -57,5 +57,5 @@ if __name__ == '__main__':
             t0      = iDF['TUEG_dt_t0'].values[mask]
             t1      = iDF['TUEG_dt_t1'].values[mask]
             tags    = iDF[varname].values
-            TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag)
+            TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
             exit()
