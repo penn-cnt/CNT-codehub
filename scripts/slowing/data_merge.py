@@ -10,15 +10,9 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
     output = []
     for irow in range(len(t_start)):
         # Break up the temple strings
-        try:
-            t0_array  = t0[irow].split('_')
-            t1_array  = t1[irow].split('_')
-            tag_array = tag[irow].split('_') 
-        except:
-            print(t0[irow])
-            print(t1[irow])
-            print(tag[irow])
-            exit()
+        t0_array  = t0[irow].split('_')
+        t1_array  = t1[irow].split('_')
+        tag_array = tag[irow].split('_') 
 
         # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
         tagflag     = True
@@ -62,12 +56,12 @@ if __name__ == '__main__':
         ### Temple Data
         varname = 'TUEG_dt_tag'
         if varname in target_sources and varname in iDF.columns:
-            mask    = (iDF[varname].values!='None')&(iDF[varname].values!=None)
+            mask    = (iDF[varname].values!=None)
             t_start = iDF['t_start'].astype('float').values[mask]
             t_end   = iDF['t_end'].astype('float').values[mask]
             t0      = iDF['TUEG_dt_t0'].values[mask]
             t1      = iDF['TUEG_dt_t1'].values[mask]
-            tags    = iDF[varname].values
+            tags    = iDF[varname].values[mask]
             targets = TUEG_SLOW_STRING(t_start,t_end,t0,t1,tags)
             iDF['target'].iloc[mask] = targets
             
