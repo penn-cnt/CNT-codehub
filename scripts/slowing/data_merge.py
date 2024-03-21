@@ -8,6 +8,7 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
 
     # Loop over the arrays
     output = []
+    rowsum = 0
     for irow in range(len(t_start)):
         # Break up the temple strings
         t0_array  = t0[irow].split('_')
@@ -22,8 +23,10 @@ def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
             if np.intersect1d(time_window,tag_window).size > 0:
                 output.append(tag_array[ii])
                 flag = False
-        #if tagflag:
-        #    output.append("INTERSLOW")
+        if tagflag:
+            output.append("INTERSLOW")
+        rowsum += 1
+    print(rowsum)
     return np.array(output)
 
 
