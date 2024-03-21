@@ -1,4 +1,5 @@
 import yaml
+import pickle
 import numpy as np
 import pandas as PD
 from sys import argv
@@ -21,6 +22,6 @@ if __name__ == '__main__':
     
     # Loop over input files and read in their data
     for ifile in files:
-        iDF = PD.read_pickle(files[0])
+        iDF = pickle.load(open(ifile,"rb"))
         print(ifile)
         print(iDF.columns)
