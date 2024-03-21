@@ -47,9 +47,10 @@ if __name__ == '__main__':
     output = PD.DataFrame(columns=yaml_dict.keys())
     
     # Loop over input files and read in their data
-    for ifile in files[1:]:
+    for ifile in files]:
         
         # Read in the data
+        print(f"Reading in {ifile}.")
         iDF           = PD.read_pickle(ifile)
         iDF['target'] = "UNKNOWN"
 
