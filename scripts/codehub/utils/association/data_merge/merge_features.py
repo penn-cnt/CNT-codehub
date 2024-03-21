@@ -2,6 +2,7 @@ import yaml
 import glob
 import pickle
 import argparse
+import numpy as np
 import pandas as PD
 from sys import argv,exit
 
@@ -25,13 +26,14 @@ if __name__ == '__main__':
         
         # Object columns
         if args.col_config == None:
-            drop_cols = ['file', 't_end', 'method']
-            obj_cols  = ['t_start', 'dt', 'uid']
+            drop_cols   = ['file', 't_end', 'method']
+            obj_cols    = ['t_start', 'dt', 'uid']
+            factor_cols = ['tag','target','annotation']
         else:
             col_info = yaml.safe_load(open(args.col_config,'r'))
             for key, inner_dict in col_info.items():
                 globals()[key] = inner_dict
-
+        
         # Loop over the files and save the outputs
         meta_obj  = []
         model_obj = []
@@ -45,9 +47,19 @@ if __name__ == '__main__':
             # Get the model columns
             model_cols = [icol for icol in iDF.columns if icol not in obj_cols]
 
+            # Make a single value return for the model columns. This is in lieu of a full array return by EPIPY
+            for icol in model_cols:
+                if icol not in obj_cols and icol not in factor_cols:
+                    try:
+                        print(iDF[icol])
+                        print(iDF[icol].apply(lambda x:x.split('_')[0]))
+                        iDF[icol] = iDF[icol].apply(lambda x:x.split('_')[0])
+                    except AttributeError:
+                        pass
+
             # Store results in serialized object
-            meta_obj.append(iDF[obj_cols])
-            model_obj.append(iDF[model_cols])
+            meta_obj.append(iDF[np.intersect1d(iDF.columns,obj_cols)])
+            model_obj.append(iDF[np.intersect1d(iDF.columns,model_cols)])
         
         # Meta generation
         print("Making the meta file")
@@ -55,10 +67,10 @@ if __name__ == '__main__':
         pickle.dump(iDF,open(f"{args.indir}{args.outfile_meta}","wb"))
 
         # Make the cleaned up model view
-        iDF                                        = PD.concat(model_obj)
-        iDF['tag'], tag_mapping_dict               = PD.factorize(iDF['tag'])
-        iDF['target'], target_mapping_dict         = PD.factorize(iDF['target'])
-        iDF['annotation'], annotation_mapping_dict = PD.factorize(iDF['annotation'])
+        iDF          = PD.concat(model_obj)
+        output_dict  = {}
+        for icol in factor_cols:
+            iDF[icol], output_dict[icol] = PD.factorize(iDF[icol])
         if 'file' in iDF.columns:
             iDF['file'], file_mapping_dict = PD.factorize(iDF['file'])
 
@@ -69,8 +81,6 @@ if __name__ == '__main__':
             if iDF[icol].dtype == itype:
                 iDF[icol] = PD.to_numeric(iDF[icol],downcast='float')
 
-        # Make the mapping dictionary
-        output_dict = {'tag':tag_mapping_dict,'target':target_mapping_dict,'annotation':annotation_mapping_dict}
         if 'file' in iDF.columns:
             output_dict['file'] = file_mapping_dict
 
