@@ -44,3 +44,10 @@ class metadata_handler:
     def set_target_file(self,inputs):
 
         self.metadata[self.file_cntr]['target_file'] = inputs
+    
+    def add_metadata(self,file_cntr,key,values):
+        """
+        Add to the metadata dictionary for a non-specific keyword. (i.e. Adding extra info for a users personal preprocessing/featute logic.)
+        """
+
+        self.metadata[file_cntr][key] = values
