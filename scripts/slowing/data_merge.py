@@ -6,26 +6,23 @@ from sys import argv,exit
 
 def TUEG_SLOW_STRING(t_start,t_end,t0,t1,tag):
 
-    # Loop over the arrays
-    output = []
-    for irow in range(len(t_start)):
-        # Break up the temple strings
-        t0_array  = t0[irow].split('_')
-        t1_array  = t1[irow].split('_')
-        tag_array = tag[irow].split('_') 
+    # Break up the temple strings
+    t0_array  = t0[irow].split('_')
+    t1_array  = t1[irow].split('_')
+    tag_array = tag[irow].split('_') 
 
-        # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
-        tagflag     = True
-        time_window = np.around(np.arange(t_start[irow],t_end[irow],0.1),1)
-        for ii in range(len(t0_array)):
-            tag_window = np.around(np.arange(float(t0_array[ii]),float(t1_array[ii]),0.1),1)
-            if np.intersect1d(time_window,tag_window).size > 0:
-                output.append(tag_array[ii])
-                tagflag = False
-        if tagflag:
-            output.append("INTERSLOW")
+    # Make arrays to see if there is any overlap (easier than a bunch of logic gates)
+    tagflag     = True
+    time_window = np.around(np.arange(t_start[irow],t_end[irow],0.1),1)
+    for ii in range(len(t0_array)):
+        tag_window = np.around(np.arange(float(t0_array[ii]),float(t1_array[ii]),0.1),1)
+        if np.intersect1d(time_window,tag_window).size > 0:
+            outtag = tag_array[ii]
+            tagflag = False
+    if tagflag:
+        outtag = "INTERSLOW"
 
-    return np.array(output)
+    return outtag
 
 
 if __name__ == '__main__':
@@ -56,7 +53,18 @@ if __name__ == '__main__':
         iDF['target'] = "UNKNOWN"
 
         # Loop over the entires to clean up the targets
-        for irow in iDF:
+        target_intersect = np.intersect1d(iDF.columns,target_sources)
+        new_targets      = []
+        for ii in iDF.shape[0]:
             
-            print(irow)
-            exit()
+            # Grab the data slice
+            irow = iDF.iloc[ii]
+
+            # Check for which target we are working with
+            for itarget in target_intersect:
+                if irow[itarget] != None:
+                    
+                    #### Temple specific logic
+                    if itarget == 'TUEG_dt_tag':
+                        itarget = TUEG_SLOW_STRING(float(irow['t_start']),float(irow['t_end']),irow['TUEG_dt_t0'],irow['TUEG_dt_t0'])
+                        new_targets.append()
