@@ -59,7 +59,6 @@ if __name__ == '__main__':
         output_dict = {}
         iDF         = PD.concat(model_obj)
         for imap in map_cols:
-            print(f"Mapping {imap}")
             iDF[imap], output_dict[imap] = PD.factorize(iDF[imap])    
         if 'file' in iDF.columns:
             iDF['file'], file_mapping_dict = PD.factorize(iDF['file'])
@@ -67,9 +66,12 @@ if __name__ == '__main__':
         # Final downcasting attempt
         for icol in iDF:
             itype     = iDF[icol].dtype
-            iDF[icol] = PD.to_numeric(iDF[icol],downcast='integer')
-            if iDF[icol].dtype == itype:
-                iDF[icol] = PD.to_numeric(iDF[icol],downcast='float')
+            try:
+                iDF[icol] = PD.to_numeric(iDF[icol],downcast='integer')
+                if iDF[icol].dtype == itype:
+                    iDF[icol] = PD.to_numeric(iDF[icol],downcast='float')
+            except ValueError:
+                pass
 
         # Make the mapping dictionary
         output_dict = {'tag':tag_mapping_dict,'target':target_mapping_dict,'annotation':annotation_mapping_dict}
