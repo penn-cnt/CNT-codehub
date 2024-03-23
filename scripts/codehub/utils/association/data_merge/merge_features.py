@@ -27,6 +27,7 @@ if __name__ == '__main__':
         if args.col_config == None:
             drop_cols = ['file', 't_end', 'method']
             obj_cols  = ['t_start', 'dt', 'uid']
+            map_cols  = ['tag','target','annotation']
         else:
             col_info = yaml.safe_load(open(args.col_config,'r'))
             for key, inner_dict in col_info.items():
@@ -55,10 +56,10 @@ if __name__ == '__main__':
         pickle.dump(iDF,open(f"{args.indir}{args.outfile_meta}","wb"))
 
         # Make the cleaned up model view
-        iDF                                        = PD.concat(model_obj)
-        iDF['tag'], tag_mapping_dict               = PD.factorize(iDF['tag'])
-        iDF['target'], target_mapping_dict         = PD.factorize(iDF['target'])
-        iDF['annotation'], annotation_mapping_dict = PD.factorize(iDF['annotation'])
+        output_dict = {}
+        iDF         = PD.concat(model_obj)
+        for imap in map_cols:
+            iDF[imap], output_dict[imap] = PD.factorize(iDF[imap])    
         if 'file' in iDF.columns:
             iDF['file'], file_mapping_dict = PD.factorize(iDF['file'])
 
