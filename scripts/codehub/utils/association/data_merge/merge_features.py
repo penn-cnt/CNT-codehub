@@ -59,6 +59,7 @@ if __name__ == '__main__':
         output_dict = {}
         iDF         = PD.concat(model_obj)
         for imap in map_cols:
+            print(f"Mapping {imap}")
             iDF[imap], output_dict[imap] = PD.factorize(iDF[imap])    
         if 'file' in iDF.columns:
             iDF['file'], file_mapping_dict = PD.factorize(iDF['file'])
