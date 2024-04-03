@@ -337,10 +337,13 @@ class ieeg_handler:
                     print(f"Downloading {ifile}.")
                 iid    = self.input_data['uid'].values[file_idx]
                 target = self.input_data['target'].values[file_idx]
-                if self.args.annotations:
-                    IEEG.download_by_annotation(iid,ifile,target,self.proposed_sub[file_idx])
-                    IEEG = iEEG_download(self.args,self.write_lock)
-                else:
-                    IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],file_idx)
+                try:
+                    if self.args.annotations:
+                        IEEG.download_by_annotation(iid,ifile,target,self.proposed_sub[file_idx])
+                        IEEG = iEEG_download(self.args,self.write_lock)
+                    else:
+                        IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],file_idx)
+                except UnboundLocalError:
+                    pass
             else:
                 print("Skipping %s." %(ifile))

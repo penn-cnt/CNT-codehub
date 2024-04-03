@@ -131,6 +131,18 @@ class basic_statistics:
         """
 
         return np.std(self.data),'stdev'
+    
+    def quantile(self,q,method='median_unbiased'):
+        """
+        Returns the q-th quantile of the data.
+
+        Args:
+            q (float): Probability to measure the quantile from. q∈[0:1] .
+            method (str, optional): Interpolation method. Defaults to 'median_unbiased'.
+        """
+
+        optional_tag = f"quantile_{q:.2f}"
+        return np.quantile(self.data,q=q,method=method),optional_tag
 
 class features:
     """

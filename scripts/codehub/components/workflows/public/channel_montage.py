@@ -29,6 +29,9 @@ class channel_montage:
             array: Array of montage data. (Issue with inheritance requires a direct passback and not through instance.)
         """
 
+        # Flag for updating sampling frequency if using the pipeline
+        self.pipeline_flag = True
+
         # Save the current dataframe
         self.dataframe_to_montage = DF
 
@@ -58,6 +61,9 @@ class channel_montage:
             dataframe: New dataframe with montage data and channel names
         """
         
+        # Flag for updating sampling frequency if using the pipeline
+        self.pipeline_flag = False
+
         # Save the user provided dataframe
         self.dataframe_to_montage = DF
 
@@ -151,8 +157,9 @@ class channel_montage:
                          ['FZ','CZ']]
         
         # Get the frequency array to reference and create the new output object
-        fs          = self.metadata[self.file_cntr]['fs']
-        self.new_fs = []
+        if self.pipeline_flag:
+            fs          = self.metadata[self.file_cntr]['fs']
+            self.new_fs = []
 
         # Get the new values to pass to the dataframe class
         montage_data = np.zeros((self.dataframe_to_montage.shape[0],len(bipolar_array))).astype('float64')
@@ -165,15 +172,16 @@ class channel_montage:
                 montage_data[:,ii] = np.nan
 
             # Update the frequency
-            try:
-                fs0 = fs[np.where(self.dataframe.columns==ival[0])[0][0]]
-                fs1 = fs[np.where(self.dataframe.columns==ival[1])[0][0]]
-                if fs0 == fs1:
-                    self.new_fs.append(fs0)
-                else:
-                    raise ValueError("Cannot montage channels with different frequencies.")
-            except IndexError:
-                self.new_fs.append(np.nan)
+            if self.pipeline_flag:
+                try:
+                    fs0 = fs[np.where(self.dataframe.columns==ival[0])[0][0]]
+                    fs1 = fs[np.where(self.dataframe.columns==ival[1])[0][0]]
+                    if fs0 == fs1:
+                        self.new_fs.append(fs0)
+                    else:
+                        raise ValueError("Cannot montage channels with different frequencies.")
+                except IndexError:
+                    self.new_fs.append(np.nan)
 
         # Get the new montage channel labels
         self.montage_channels = [f"{ichannel[0]}-{ichannel[1]}" for ichannel in bipolar_array]

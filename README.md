@@ -43,6 +43,10 @@ You will likely need to add this package to your python path to ensure full func
 
 > conda develop <path-to-git-head>/scripts/codehub/
 
+## Installation using venv
+
+To be added soon.
+
 # Documentation
 
 This repository is meant to serve two main purposes.

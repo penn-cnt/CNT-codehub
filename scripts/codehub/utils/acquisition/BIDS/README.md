@@ -8,7 +8,12 @@ When possible, we should aim to download data into a BIDS compliant format. The 
 - Local files
 - iEEG.org datasets.
 
-The following sections detail how to 
+## Some notation
+
+We are iterating on the best notation for some extra fields that go into this software. A quick reference follows:
+
+- uid : A unique identifier. We anticipate use cases where someone needs to map a subject number to identifying information. This unique id is associated with each subject number and can be mapped to a private id behind a relevant firewall. This can also be the subject number, but for our institution we use a variety of ids for different projects, so mapping subject numbers directly is not ideal.
+- targets : A target vector, diagnosis, etc, that can be mapped to the same basename as an edf file for easy ingestion in other scripts. Automatically added to the .bidsignore file.
 
 ### iEEG.org
 
@@ -45,4 +50,11 @@ Where
 
 ```
 python utils/acquisition/BIDS/EEG_BIDS.py --ieeg --username bjprager --password ********* --bidsroot ../../user_data/BIDS --session preimplant --cli --start=8832031250 --duration=1e6 --dataset=EMU1144_Day01_1
+```
+
+### Direct EDF to BIDS
+
+#### Convert a list of files to BIDS
+```
+python utils/acquisition/BIDS/EEG_BIDS.py --edf --inputs_file utils/acquisition/BIDS/samples/local_input_file.csv --bidsroot ../../user_data/BIDS --session preimplant
 ```
