@@ -4,13 +4,113 @@ import inspect
 import numpy as np
 import pandas as PD
 from tqdm import tqdm
+from fooof import FOOOF
+from scipy.integrate import simpson
 from scipy.signal import welch, find_peaks, detrend
+from neurodsp.spectral import compute_spectrum_welch
 
 # Import error logging (primarily for mne)
 from components.core.internal.config_loader import *
 from components.metadata.public.metadata_handler import *
 
+# In some cases, we want variables to persist through steps. (i.e. A solver or fitting class.) Persistance_dict can store results across steps.
+global persistance_dict
+persistance_dict = {}
+
+class FOOOF_processing:
+
+    def __init__(self, data, fs, freq_range, ichannel):
+        self.data       = data
+        self.fs         = fs
+        self.freq_range = freq_range
+        self.ichannel   = ichannel
+
+    def create_initial_power_spectra(self):
+        self.freqs, self.initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
+
+    def fit_fooof(self):
+
+        # Initialize a FOOOF object
+        fg = FOOOF()
+
+        # Report: fit the model, print the resulting parameters, and plot the reconstruction
+        fg.fit(self.freqs, self.initial_power_spectrum, self.freq_range)
+
+        # get the one over f curve
+        b0,b1      = fg.get_results().aperiodic_params
+        one_over_f = b0-np.log10(self.freqs**b1)
+
+        # Get the residual periodic fit
+        periodic_comp = self.initial_power_spectrum-one_over_f
+
+        # Store the results for persistant fitting
+        persistance_dict['fooof']                         = {}
+        persistance_dict['fooof'][self.ichannel]          = {}
+        persistance_dict['fooof'][self.ichannel]['model'] = fg
+        persistance_dict['fooof'][self.ichannel]['data']  = (self.freqs,periodic_comp)
+
+    def check_persistance(self):
+        try:
+            persistance_dict['fooof'][self.ichannel]
+        except KeyError:
+            self.create_initial_power_spectra()
+            self.fit_fooof()
+
+    def fooof_aperiodic_b0(self):
+        """
+        Return the constant offset for the aperiodic fit.
+
+        Returns:
+            float: Unitless float for the aperiodic offset parameter.
+        """
+
+        # Make the optional tag to identify the dataslice
+        self.optional_tag = ''
+
+        # Check for fooof model, then get aperiodic b0
+        self.check_persistance()
+        return persistance_dict['fooof'][self.ichannel]['model'].aperiodic_params_[0],self.optional_tag
+    
+    def fooof_aperiodic_b1(self):
+        """
+        Return the powerlaw exponent for the aperiodic fit.
+
+        Returns:
+            float: Unitless float for the aperiodic powerlaw parameter.
+        """
+
+        # Make the optional tag to identify the dataslice
+        self.optional_tag = ''
+
+        # Check for fooof model, then get aperiodic b1
+        self.check_persistance()
+        return persistance_dict['fooof'][self.ichannel]['model'].aperiodic_params_[1],self.optional_tag
+
+    def fooof_bandpower(self,lo_freq,hi_freq):
+        """
+        Return the bandpower with the aperiodic component removed.
+
+        Returns:
+            float: Bandpower in the periodic component in the given frequency band.
+        """
+
+        # Add in the optional tagging to denote frequency range of this step
+        low_freq_str      = f"{lo_freq:.2f}"
+        hi_freq_str       = f"{hi_freq:.2f}"
+        self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
+
+        # Check for fooof model, then get aperiodic b1
+        self.check_persistance()
+        x,y = persistance_dict['fooof'][self.ichannel]['data']
+
+        # Get the correct array slice to return the simpson integration
+        inds = (x>=lo_freq)&(x<hi_freq)
+        return simpson(y=y[inds],x=x[inds]),self.optional_tag
+
 class signal_processing:
+    """
+    Class devoted to basic signal processing tasks. (Band-power/peak-finder/etc.)
+    """
     
     def __init__(self, data, fs):
         self.data = data
@@ -32,8 +132,8 @@ class signal_processing:
         """
 
         # Add in the optional tagging to denote frequency range of this step
-        low_freq_str      = str(np.floor(low_freq))
-        hi_freq_str       = str(np.floor(hi_freq))
+        low_freq_str      = f"{low_freq:.2f}"
+        hi_freq_str       = f"{hi_freq:.2f}"
         self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
 
         # Get the number of samples in each window for welch average and the overlap
@@ -212,8 +312,13 @@ class features:
 
                             # Perform preprocessing step
                             try:
-                                # Create namespace for this step then call the function
-                                namespace           = cls(dataset[:,ichannel],fs[ichannel])
+                                # Create namespaces for each class. Then choose which style of initilization is used by logic gate.
+                                if cls.__name__ != 'FOOOF_processing':
+                                    namespace = cls(dataset[:,ichannel],fs[ichannel])
+                                else:
+                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], ichannel)
+
+                                # Get the method name and return results from the method
                                 method_call         = getattr(namespace,method_name)
                                 result_a, result_b  = method_call(**method_args)
 
@@ -230,6 +335,7 @@ class features:
                                     result_b = getattr(namespace,'optional_tag')
                                 except:
                                     result_b = "None"
+                                print(f"Error encountered in {method_name}. Returning nulls.")
 
                         # Use metadata to allow proper feature grouping
                         meta_arr = [imeta['file'],imeta['t_start'],imeta['t_end'],imeta['dt'],method_name,result_b]
@@ -239,15 +345,17 @@ class features:
                         if (idx%5000==0):
 
                             # Dataframe creations
-                            iDF             = PD.DataFrame(df_values,columns=self.feature_df.columns)
-                            self.feature_df = PD.concat((self.feature_df,iDF))
+                            iDF = PD.DataFrame(df_values,columns=self.feature_df.columns)
+                            if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
+                                self.feature_df = PD.concat((self.feature_df,iDF))
 
                             # Clean up the dummy list
                             df_values = []
 
                     # Dataframe creations
-                    iDF             = PD.DataFrame(df_values,columns=self.feature_df.columns)
-                    self.feature_df = PD.concat((self.feature_df,iDF))
+                    iDF = PD.DataFrame(df_values,columns=self.feature_df.columns)
+                    if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
+                        self.feature_df = PD.concat((self.feature_df,iDF))
 
                     # Downcast feature array to take up less space in physical and virtual memory. Use downcast first in case its a feature that cannot be made numeric
                     for ichannel in channels:
@@ -256,3 +364,6 @@ class features:
                             self.feature_df[ichannel]=self.feature_df[ichannel].astype('float32')
                         except ValueError:
                             pass
+
+        # The stagger condition seems to add duplicates. Need to fix eventually.
+        self.feature_df = self.feature_df.drop_duplicates(ignore_index=True)

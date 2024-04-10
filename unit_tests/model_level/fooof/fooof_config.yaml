@@ -1,0 +1,10 @@
+timeseries:
+    #dirac:
+    #    - 512
+    #white:
+    #    - None
+    pink:
+        - None
+    sinusoid:
+        - 1
+        - 0.1
