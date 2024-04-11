@@ -28,9 +28,9 @@ class FOOOF_processing:
 
     def create_initial_power_spectra(self):
         self.freqs, self.initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
-        print(self.freqs)
-        import sys
-        exit()
+        inds                                    = (self.freqs>0)
+        self.freqs                              = self.freqs[inds]
+        self.initial_power_spectrum             = self.initial_power_spectrum[inds]
 
     def fit_fooof(self):
 
