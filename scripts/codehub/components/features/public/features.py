@@ -1,3 +1,4 @@
+import os
 import ast
 import sys
 import inspect
@@ -339,7 +340,11 @@ class features:
                                 
                                 # Save the error for this step
                                 if not error_flag:
-                                    fp = open(f"{self.worker_number}_features.error","a")
+                                    error_dir = f"{self.args.outdir}errors/"
+                                    if not os.path.exists(error_dir):
+                                        os.system(f"mkdir -p {error_dir}")
+
+                                    fp = open(f"{error_dir}{self.worker_number}_features.error","a")
                                     fp.write(f"Error {e} in {method_name}\n")
                                     fp.close()
                                     error_flag = True
