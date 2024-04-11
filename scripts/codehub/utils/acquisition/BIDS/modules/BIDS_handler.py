@@ -174,10 +174,7 @@ class BIDS_handler:
         source  = source[inds][0]
         user    = getpass.getuser()
         gendate = date.today().strftime("%d-%m-%y")
-        if self.args.annotations:
-            times = 'annots'
-        else:
-            times = f"{self.args.start}_{self.args.duration}"
+        times   = f"{self.args.start}_{self.args.duration}"
 
         # Save the subject file info with source metadata
         columns = ['orig_filename','source','creator','gendate','uid','subject_number','session_number','times']
