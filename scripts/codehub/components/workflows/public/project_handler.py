@@ -108,6 +108,8 @@ class project_handlers:
             project_handlers.scalp_basic(self)
         elif self.args.project.lower() == 'imaging_basic':
             project_handlers.imaging_basic(self)
+        elif self.args.project.lower() == 'neurovista_basic':
+            project_handlers.neurovista_basic(self)
 
     def scalp_basic(self):
         """
@@ -162,3 +164,45 @@ class project_handlers:
         """
 
         pass
+
+    def neurovista_basic(self):
+            """
+            Basic pipeline to process Neurovista data.
+            """
+            # Import data into memory
+            load_flag = data_loader.pipeline(self)      # Load flag is a boolean that lets us know if the current data loaded correctly
+
+            # If data loaded, begin the processing portion
+            if load_flag:
+                # Clean the channel names
+                channel_clean.pipeline(self)
+
+                # Get the correct channels for this merger
+                channel_mapping.pipeline(self)
+
+                # Once we have the cleaned channel names, and the appropriate column slices, make a dataframe.
+                # Dataframes are formed from the self.raw_data object and self.master_channel_list.
+                # Data up to this point is kept as a raw array due to variable input formats and because dataframes
+                # tend to take up more memory and have slower operations. 
+                dataframe_manager.__init__(self)
+                dataframe_manager.column_subsection(self,self.channel_map_out)  
+
+                # We can use the dataframe to set criteria for continued analysis.
+                # In this example, the data must have at least the sampling frequency worth of values
+                min_fs = int(max(self.metadata[self.file_cntr]['fs']))
+                if self.dataframe.shape[0] > min_fs:
+                    # You can either montage first, then preprocess, or vice versa.
+                    # At present you cannot mix these steps. But later updates will allow
+                    # to provide the ability to define multiple preprocessing blocks that
+                    # can be ordered independently.
+                    #df = preprocessing.__init__(self, self.dataframe, self.metadata[self.file_cntr]['fs'])
+
+                    # Montage the data
+                    self.montaged_dataframe = channel_montage.pipeline(self,self.dataframe)
+
+                    # Store the data to the output handler so we can pass everything to the feature extractor
+                    # Returning to a list of arrays so it can be passed to different modeling back-ends like PyTorch.
+                    output_manager.update_output_list(self,self.montaged_dataframe.values)
+                else:
+                    if not self.args.silent:
+                        print(f"Dataframe of shape {self.dataframe.shape} does not contain at least {min_fs} samples.")

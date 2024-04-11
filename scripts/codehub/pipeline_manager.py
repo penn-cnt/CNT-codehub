@@ -104,8 +104,12 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
 
         # In the case that all of the data is removed, skip write step
         if len(self.metadata.keys()) > 0:
+            
             # Save the results
             output_manager.save_features(self)
+
+            if not self.args.skip_clean_save:
+                output_manager.save_output_list(self)
 
     def feature_manager(self):
         """
@@ -204,6 +208,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     allowed_montage_help   = make_help_str(allowed_montage_args)
     allowed_input_help     = make_help_str(allowed_input_args)
     allowed_viability_help = make_help_str(allowed_viability_args)
+    allowed_majoraxis_help = make_help_str(allowed_majoraxis_args)
 
     # Command line options needed to obtain data.
     parser = argparse.ArgumentParser(description="Simplified data merging tool.", formatter_class=CustomFormatter)
@@ -238,6 +243,9 @@ def argument_handler(argument_dir='./',require_flag=True):
     montage_group = parser.add_argument_group('Montage Options')
     montage_group.add_argument("--montage", type=str,  choices=list(allowed_montage_args.keys()), default="HUP1020", help=f"R|Choose an option:\n{allowed_montage_help}")
 
+    orientation_group = parser.add_argument_group('Orientation Options')
+    orientation_group.add_argument("--orientation", type=str,  choices=list(allowed_majoraxis_args.keys()), default="column", help=f"R|Choose an option:\n{allowed_majoraxis_help}")
+
     viability_group = parser.add_argument_group('Data viability Options')
     viability_group.add_argument("--viability", type=str,  choices=list(allowed_viability_args.keys()), default="VIABLE_DATA", help=f"R|Choose an option:\n{allowed_viability_help}")
     viability_group.add_argument("--interp", action='store_true', default=False, help="Interpolate over NaN values of sequence length equal to n_interp.")
@@ -263,7 +271,12 @@ def argument_handler(argument_dir='./',require_flag=True):
     misc_group.add_argument("--input_str", type=str, help="Optional. If glob input, wildcard path. If csv/manual, filepath to input csv/raw data.")
     misc_group.add_argument("--silent", action='store_true', default=False, help="Silent mode.")
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug mode. If set, does not save results. Useful for testing code.")
+    misc_group.add_argument("--skip_clean_save", action='store_true', default=False, help="Do not save cleaned up raw data. Mostly useful if you just want features.")
     args = parser.parse_args()
+
+    # Make sure the output directory has a trailing /
+    if args.outdir[-1] != '/':
+        args.outdir += '/'
 
     # Help info if needed to be passed back as an object and not string
     help_info    = {}

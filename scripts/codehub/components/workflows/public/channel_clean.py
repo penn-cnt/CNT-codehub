@@ -58,6 +58,8 @@ class channel_clean:
             self.clean_hup()
         elif clean_method.lower() == 'temple':
             self.clean_temple()
+        elif clean_method.lower() == 'neurovista':
+            self.clean_neurovista()
 
     def clean_hup(self):
         """
@@ -100,3 +102,10 @@ class channel_clean:
                 new_name = ichannel.replace("EEG","").replace("-REF","").strip()
             self.clean_channel_map.append(new_name.upper())
         self.clean_channel_map = np.array(self.clean_channel_map)       
+
+    def clean_neurovista(self):
+        """
+        TODO: This is essentially just a 'pass'. Neurovista cleaning logic will be added in the future.  
+        """
+
+        self.clean_channel_map = self.metadata[self.file_cntr]['channels']

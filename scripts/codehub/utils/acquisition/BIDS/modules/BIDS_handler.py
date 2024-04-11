@@ -67,7 +67,7 @@ class BIDS_handler:
 
         # Make the channel types
         self.channel_types = []
-        for iexpression in channel_expressions:
+        for (i, iexpression), channel in zip(enumerate(channel_expressions), self.channels):
             if iexpression == None:
                 self.channel_types.append('misc')
             else:
@@ -77,6 +77,9 @@ class BIDS_handler:
                     self.channel_types.append('ecg')
                 elif lead.lower() in ['c', 'cz', 'cz', 'f', 'fp', 'fp', 'fz', 'fz', 'o', 'p', 'pz', 'pz', 't']:
                     self.channel_types.append('eeg')
+                elif "NVC" in iexpression.group(0):  # NeuroVista data 
+                    self.channel_types.append('eeg')
+                    self.channels[i] = f"{channel[-2:]}"
                 else:
                     self.channel_types.append(1)
 
@@ -138,6 +141,11 @@ class BIDS_handler:
         run_number     = int(self.file_idx)+1
         session_str    = "%s%03d" %(self.args.session,self.session_number)
         self.bids_path = mne_bids.BIDSPath(root=self.args.bidsroot, datatype='eeg', session=session_str, subject='%05d' %(self.subject_num), run=run_number, task='task')
+
+        data = raw.get_data()
+        data[np.isnan(data)] = 0
+        raw._data = data
+
         write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False,overwrite=True)
         
         # Save the targets with the edf path paired up to filetype

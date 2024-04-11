@@ -2,16 +2,20 @@
 allowed_project_args:
     SCALP_BASIC: Basic scalp processing pipeline. (bjprager 10/2023)
     IMAGING_BASIC: Basic imaging processing pipeline.
+    NEUROVISTA_BASIC: Basic Neurovista progessing pipeline.
 allowed_datatypes:
     EDF: Read in EDF data.
 allowed_clean_args:
     HUP: Clean according to HUPs lead and channel format.
     TEMPLE: Clean according to Temple's TUEG dataset.
+    NEUROVISTA: Clean for NeuroVista data.
 allowed_channel_args:
     HUP1020: Channels associated with a 10-20 montage performed at HUP.
+    NEUROVISTA: Channels for NeuroVista data.
     RAW: Use all possible channels. Warning, channels may not match across different datasets.
 allowed_montage_args:
     HUP1020: Use a 10-20 montage.
+    NEUROVISTA: Use a custom NeuroVista montage.
     COMMON_AVERAGE: Use a common average montage.
 
 # Imaging config keywords. need to be handled differently since they can be combined and are not a single choice
@@ -48,3 +52,6 @@ allowed_viability_args:
     VIABLE_DATA: Drop datasets that contain a NaN column. (default)
     VIABLE_COLUMNS: Use the minimum cross section of columns across all datasets that contain no NaNs.
     None: Do not remove data with NaNs.
+allowed_majoraxis_args:
+    column: Default. Raw data is in [samples,channel] (i.e. Columnar) format.
+    row: Raw data is in [channel,samples] (i.e. Row) format.  

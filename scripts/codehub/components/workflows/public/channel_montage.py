@@ -92,6 +92,8 @@ class channel_montage:
             return self.montage_hup1020()
         elif montage.lower() == "common_average":
             return self.montage_common_average()   
+        elif montage.lower() == "neurovista":
+            return self.montage_neurovista()   
 
     def montage_common_average(self):
         """
@@ -188,3 +190,12 @@ class channel_montage:
 
         # Pass the data to the dataframe class function for montages
         return montage_data 
+    
+    def montage_neurovista(self):
+        """
+        TODO: add Neurovista montaging.
+        """
+        montage_data          = self.dataframe.values
+        self.montage_channels = self.dataframe.columns
+        self.new_fs           = self.metadata[self.file_cntr]['fs']
+        return montage_data
