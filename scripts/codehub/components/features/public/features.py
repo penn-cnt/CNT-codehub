@@ -35,7 +35,7 @@ class FOOOF_processing:
     def fit_fooof(self):
 
         # Initialize a FOOOF object
-        fg = FOOOF(peak_width_limits=(1,12))
+        fg = FOOOF(peak_width_limits=(2,12))
 
         # Report: fit the model, print the resulting parameters, and plot the reconstruction
         fg.fit(self.freqs, self.initial_power_spectrum, self.freq_range)
