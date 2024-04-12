@@ -54,6 +54,8 @@ class FOOOF_processing:
         persistance_dict['fooof'][self.file][self.ichannel]          = {}
         persistance_dict['fooof'][self.file][self.ichannel]['model'] = fg
         persistance_dict['fooof'][self.file][self.ichannel]['data']  = (self.freqs,periodic_comp)
+
+        print(self.initial_power_spectrum)
         print(persistance_dict)
         exit()
 
