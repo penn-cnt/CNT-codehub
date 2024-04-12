@@ -55,13 +55,10 @@ class FOOOF_processing:
         persistance_dict['fooof'][self.file][self.ichannel]['model'] = fg
         persistance_dict['fooof'][self.file][self.ichannel]['data']  = (self.freqs,periodic_comp)
 
-        print(self.initial_power_spectrum)
-        print(persistance_dict)
-        exit()
-
     def check_persistance(self):
         try:
-            persistance_dict['fooof'][self.file][self.ichannel]
+            print(persistance_dict['fooof'][self.file][self.ichannel])
+            exit()
         except KeyError:
             self.create_initial_power_spectra()
             self.fit_fooof()
