@@ -20,15 +20,16 @@ persistance_dict = {}
 
 class FOOOF_processing:
 
-    def __init__(self, data, fs, freq_range, ichannel):
+    def __init__(self, data, fs, freq_range, file, ichannel):
         self.data       = data
         self.fs         = fs
         self.freq_range = freq_range
+        self.file       = file
         self.ichannel   = ichannel
 
     def create_initial_power_spectra(self):
         self.freqs, self.initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
-        inds                                    = (self.freqs>0)
+        inds                                    = (self.freqs>0)&(self.initial_power_spectrum>0)&np.isfinite(initial_power_spectrum)
         self.freqs                              = self.freqs[inds]
         self.initial_power_spectrum             = self.initial_power_spectrum[inds]
 
@@ -48,14 +49,15 @@ class FOOOF_processing:
         periodic_comp = self.initial_power_spectrum-one_over_f
 
         # Store the results for persistant fitting
-        persistance_dict['fooof']                         = {}
-        persistance_dict['fooof'][self.ichannel]          = {}
-        persistance_dict['fooof'][self.ichannel]['model'] = fg
-        persistance_dict['fooof'][self.ichannel]['data']  = (self.freqs,periodic_comp)
+        persistance_dict['fooof']                                    = {}
+        persistance_dict['fooof'][self.file]                         = {}
+        persistance_dict['fooof'][self.file][self.ichannel]          = {}
+        persistance_dict['fooof'][self.file][self.ichannel]['model'] = fg
+        persistance_dict['fooof'][self.file][self.ichannel]['data']  = (self.freqs,periodic_comp)
 
     def check_persistance(self):
         try:
-            persistance_dict['fooof'][self.ichannel]
+            persistance_dict['fooof'][self.file][self.ichannel]
         except KeyError:
             self.create_initial_power_spectra()
             self.fit_fooof()
@@ -73,7 +75,7 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b0
         self.check_persistance()
-        return persistance_dict['fooof'][self.ichannel]['model'].aperiodic_params_[0],self.optional_tag
+        return persistance_dict['fooof'][self.file][self.ichannel]['model'].aperiodic_params_[0],self.optional_tag
     
     def fooof_aperiodic_b1(self):
         """
@@ -88,7 +90,7 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b1
         self.check_persistance()
-        return persistance_dict['fooof'][self.ichannel]['model'].aperiodic_params_[1],self.optional_tag
+        return persistance_dict['fooof'][self.file][self.ichannel]['model'].aperiodic_params_[1],self.optional_tag
 
     def fooof_bandpower(self,lo_freq,hi_freq):
         """
@@ -105,7 +107,7 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b1
         self.check_persistance()
-        x,y = persistance_dict['fooof'][self.ichannel]['data']
+        x,y = persistance_dict['fooof'][self.file][self.ichannel]['data']
 
         # Get the correct array slice to return the simpson integration
         inds = (x>=lo_freq)&(x<hi_freq)
@@ -321,7 +323,7 @@ class features:
                                 if cls.__name__ != 'FOOOF_processing':
                                     namespace = cls(dataset[:,ichannel],fs[ichannel])
                                 else:
-                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], ichannel)
+                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel)
 
                                 # Get the method name and return results from the method
                                 method_call         = getattr(namespace,method_name)
@@ -335,7 +337,7 @@ class features:
                                 output.append(result_a)
                             except Exception as e:
                                 # We need a flexible solution to errors, so just populating a nan value
-                                output.append(None)
+                                output.append(np.nan)
                                 try:
                                     result_b = getattr(namespace,'optional_tag')
                                 except:
