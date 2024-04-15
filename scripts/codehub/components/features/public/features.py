@@ -33,11 +33,6 @@ class FOOOF_processing:
         self.freqs                              = self.freqs[inds]
         self.initial_power_spectrum             = self.initial_power_spectrum[inds]
 
-        print(self.initial_power_spectrum)
-        print(self.initial_power_spectrum.size)
-        print(inds.sum()/inds.size)
-        exit()
-
     def fit_fooof(self):
 
         # Initialize a FOOOF object
