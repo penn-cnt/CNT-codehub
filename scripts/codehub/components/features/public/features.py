@@ -349,7 +349,7 @@ class features:
                                     result_b = "None"
                                 
                                 # Save the error for this step
-                                if not error_flag:
+                                if not error_flag and not self.args.debug:
                                     error_dir = f"{self.args.outdir}errors/"
                                     if not os.path.exists(error_dir):
                                         os.system(f"mkdir -p {error_dir}")
