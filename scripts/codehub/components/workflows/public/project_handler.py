@@ -145,6 +145,7 @@ class project_handlers:
                 self.mne_channels = channel_clean.direct_inputs(self,mne_channels)
 
                 # Preprocess the data
+                exit()
                 df = preprocessing.__init__(self, self.dataframe, self.metadata[self.file_cntr]['fs'])
 
                 # Put the data into a specific montage
