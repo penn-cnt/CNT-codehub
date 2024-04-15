@@ -29,7 +29,7 @@ class FOOOF_processing:
 
     def create_initial_power_spectra(self):
         self.freqs, self.initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
-        inds                                    = (self.freqs>0)
+        inds                                    = (self.freqs>0)&np.isfinite(self.initial_power_spectrum)
         self.freqs                              = self.freqs[inds]
         self.initial_power_spectrum             = self.initial_power_spectrum[inds]
 
@@ -57,8 +57,7 @@ class FOOOF_processing:
 
     def check_persistance(self):
         try:
-            print(persistance_dict['fooof'][self.file][self.ichannel])
-            exit()
+            persistance_dict['fooof'][self.file][self.ichannel]
         except KeyError:
             self.create_initial_power_spectra()
             self.fit_fooof()
@@ -289,7 +288,7 @@ class features:
         # Iterate over steps, find the corresponding function, then invoke it.
         steps = np.sort(list(self.feature_commands.keys()))
         desc  = "Feature extraction with id %s:" %(self.unique_id)
-        for istep in tqdm(steps, desc=desc, total=len(steps), bar_format=self.bar_frmt, position=self.worker_number, leave=False, disable=self.args.silent):
+        for istep in tqdm(steps, desc=desc, total=len(steps), bar_format=self.bar_frmt, position=self.worker_number, leave=False, disable=self.args.silent,dynamic_ncols=True):
 
             # Get information about the method
             method_name = self.feature_commands[istep]['method']
