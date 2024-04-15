@@ -21,6 +21,10 @@ from prompt_toolkit.completion import PathCompleter
 from components.core.internal.error_logging import *
 from components.core.internal.config_loader import *
 
+# In some cases, we want variables to persist through steps. (i.e. A solver, fitting class, disk i/o, etc.) Persistance_dict can store results across steps.
+global persistance_dict
+persistance_dict = {}
+
 class mne_processing:
 
     def __init__(self,dataset,fs,mne_channels,fname):
@@ -40,10 +44,6 @@ class mne_processing:
         self.ppchannels   = list(dataset.columns)
         self.mne_channels = mne_channels
         self.errors       = []
-
-        #for idx,ival in enumerate(self.ppchannels):
-        #    print(ival,fs[idx])
-        #print(fs)
 
         # Make sure that all of the frequencies match for mne
         if len(np.unique(fs)) == 1:
@@ -78,14 +78,18 @@ class mne_processing:
                 raise FileNotFoundError("No valid MNE channel configuration file provided. Quitting.")
 
         # Get the channel mappings in mne compliant form
-        mapping      = yaml.safe_load(open(config_path,'r'))
-        mapping_keys = list(mapping.keys())
-        ch_types     = []
-        for ichannel in self.ppchannels:
-            if ichannel in mapping_keys:
-                ch_types.append(mapping[ichannel])
-            else:
-                ch_types.append('eeg')
+        if 'mne_chtypes' in persistance_dict.keys():
+            ch_types = persistance_dict['mne_chtypes']
+        else:
+            mapping      = yaml.safe_load(open(config_path,'r'))
+            mapping_keys = list(mapping.keys())
+            ch_types     = []
+            for ichannel in self.ppchannels:
+                if ichannel in mapping_keys:
+                    ch_types.append(mapping[ichannel])
+                else:
+                    ch_types.append('eeg')
+            persistance_dict['mne_chtypes'] = ch_types
 
         # Create the mne object
         info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
@@ -169,10 +173,11 @@ class signal_processing:
 
         """
 
-        if filter_type in ["bandpass","bandstop"]:
+        try:
+            (bandpass_b,bandpass_a) = persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs]
+        except KeyError:
             bandpass_b, bandpass_a = butter(butterorder,freq_filter_array, btype=filter_type, fs=self.fs)
-        elif filter_type in ["lowpass","highpass"]:
-            bandpass_b, bandpass_a = butter(butterorder,freq_filter_array, btype=filter_type, fs=self.fs)
+            persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs] = (bandpass_b,bandpass_a)
             
         return filtfilt(bandpass_b, bandpass_a, self.data, axis=0)
 

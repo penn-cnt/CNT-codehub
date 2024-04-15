@@ -14,7 +14,7 @@ from neurodsp.spectral import compute_spectrum_welch
 from components.core.internal.config_loader import *
 from components.metadata.public.metadata_handler import *
 
-# In some cases, we want variables to persist through steps. (i.e. A solver or fitting class.) Persistance_dict can store results across steps.
+# In some cases, we want variables to persist through steps. (i.e. A solver, fitting class, disk i/o, etc.) Persistance_dict can store results across steps.
 global persistance_dict
 persistance_dict = {}
 
@@ -29,9 +29,14 @@ class FOOOF_processing:
 
     def create_initial_power_spectra(self):
         self.freqs, self.initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
-        inds                                    = (self.freqs>0)&np.isfinite(self.initial_power_spectrum)
+        inds                                    = (self.freqs>0)&np.isfinite(self.initial_power_spectrum)&(self.initial_power_spectrum>0)
         self.freqs                              = self.freqs[inds]
         self.initial_power_spectrum             = self.initial_power_spectrum[inds]
+
+        print(self.initial_power_spectrum)
+        print(self.initial_power_spectrum.size)
+        print(inds.sum()/inds.size)
+        exit()
 
     def fit_fooof(self):
 
