@@ -176,11 +176,12 @@ class signal_processing:
 
         """
 
+        keyname = f"butterworth_{butterorder}_{freq_filter_array}_{filter_type}_{self.fs}"
         try:
-            bandpass_b,bandpass_a = persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs]
+            bandpass_b,bandpass_a = persistance_dict[keyname]
         except KeyError:
             bandpass_b, bandpass_a = butter(butterorder,freq_filter_array, btype=filter_type, fs=self.fs)
-            persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs] = (bandpass_b,bandpass_a)
+            persistance_dict[keyname] = (bandpass_b,bandpass_a)
             
         return filtfilt(bandpass_b, bandpass_a, self.data, axis=0)
 
