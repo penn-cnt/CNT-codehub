@@ -404,7 +404,8 @@ class preprocessing:
                             MP          = mne_processing(dataset,fs,self.mne_channels,fname)
                             method_call = getattr(MP,method_name)
                             dataset     = method_call(**method_args)
-                        except:
+                        except Exception as e:
+                            print(f"MNE Error {e}")
                             dataset *= np.nan
         return dataset
 

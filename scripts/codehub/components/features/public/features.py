@@ -336,6 +336,11 @@ class features:
 
                                 output.append(result_a)
                             except Exception as e:
+
+                                # Add the ability to see the error if debugging
+                                if self.args.debug:
+                                    print(f"Error {e}.")
+
                                 # We need a flexible solution to errors, so just populating a nan value
                                 output.append(None)
                                 try:
