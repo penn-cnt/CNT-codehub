@@ -49,16 +49,11 @@ class FOOOF_processing:
         periodic_comp = self.initial_power_spectrum-one_over_f
 
         # Store the results for persistant fitting
-        persistance_dict['fooof']                                    = {}
-        persistance_dict['fooof'][self.file]                         = {}
-        persistance_dict['fooof'][self.file][self.ichannel]          = {}
-        persistance_dict['fooof'][self.file][self.ichannel]['model'] = fg
-        persistance_dict['fooof'][self.file][self.ichannel]['data']  = (self.freqs,periodic_comp)
+        persistance_dict[self.fooof_key] = (fg,self.freqs,periodic_comp)
 
     def check_persistance(self):
-        try:
-            persistance_dict['fooof'][self.file][self.ichannel]
-        except KeyError:
+        self.fooof_key = f"fooof_{self.file}_{self.ichannel}"
+        if self.fooof_key not in persistance_dict.keys():
             self.create_initial_power_spectra()
             self.fit_fooof()
 
@@ -75,7 +70,7 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b0
         self.check_persistance()
-        return persistance_dict['fooof'][self.file][self.ichannel]['model'].aperiodic_params_[0],self.optional_tag
+        return persistance_dict[self.fooof_key][0].aperiodic_params_[0],self.optional_tag
     
     def fooof_aperiodic_b1(self):
         """
@@ -90,7 +85,7 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b1
         self.check_persistance()
-        return persistance_dict['fooof'][self.file][self.ichannel]['model'].aperiodic_params_[1],self.optional_tag
+        return persistance_dict[self.fooof_key][0].aperiodic_params_[1],self.optional_tag
 
     def fooof_bandpower(self,lo_freq,hi_freq):
         """
@@ -107,7 +102,8 @@ class FOOOF_processing:
 
         # Check for fooof model, then get aperiodic b1
         self.check_persistance()
-        x,y = persistance_dict['fooof'][self.file][self.ichannel]['data']
+        x = persistance_dict[self.fooof_key][1]
+        y = persistance_dict[self.fooof_key][1]
 
         # Get the correct array slice to return the simpson integration
         inds = (x>=lo_freq)&(x<hi_freq)
