@@ -339,7 +339,7 @@ class features:
 
                                 # Add the ability to see the error if debugging
                                 if self.args.debug:
-                                    print(f"Error {e}.")
+                                    print(f"Error {e} in step {istep}.")
 
                                 # We need a flexible solution to errors, so just populating a nan value
                                 output.append(None)
