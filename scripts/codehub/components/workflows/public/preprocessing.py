@@ -177,7 +177,7 @@ class signal_processing:
         """
 
         try:
-            (bandpass_b,bandpass_a) = persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs]
+            bandpass_b,bandpass_a = persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs]
         except KeyError:
             bandpass_b, bandpass_a = butter(butterorder,freq_filter_array, btype=filter_type, fs=self.fs)
             persistance_dict['butterworth'][butterorder][freq_filter_array][filter_type][self.fs] = (bandpass_b,bandpass_a)
