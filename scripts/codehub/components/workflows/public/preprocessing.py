@@ -79,8 +79,8 @@ class mne_processing:
 
         # Get the channel mappings in mne compliant form
         if 'mne_chtypes' in persistance_dict.keys():
-            ch_types = persistance_dict['mne_chtypes']
-            montage  = persistance_dict['mne_montage']
+            ch_types      = persistance_dict['mne_chtypes']
+            info,montage  = persistance_dict['mne_montage']
         else:
             #Create the mne channel types
             mapping      = yaml.safe_load(open(config_path,'r'))
@@ -98,7 +98,7 @@ class mne_processing:
             montage      = mne.channels.make_standard_montage("standard_1020")
             mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
             montage.rename_channels(mne_chan_map)
-            persistance_dict['mne_montage'] = montage
+            persistance_dict['mne_montage'] = (info,montage)
 
         # Create the raw mne object and set the montages
         raw = mne.io.RawArray(self.dataset.T, info,verbose=False)
