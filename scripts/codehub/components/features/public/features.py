@@ -366,7 +366,7 @@ class features:
                             if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
                                 try:
                                     self.feature_df = PD.concat((self.feature_df,iDF))
-                                except NameError:
+                                except AttributeError:
                                     self.feature_df = iDF.copy()
 
                             # Clean up the dummy list
@@ -377,7 +377,7 @@ class features:
                     if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
                         try:
                             self.feature_df = PD.concat((self.feature_df,iDF))
-                        except NameError:
+                        except AttributeError:
                             self.feature_df = iDF.copy()
 
                     # Downcast feature array to take up less space in physical and virtual memory. Use downcast first in case its a feature that cannot be made numeric
