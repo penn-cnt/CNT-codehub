@@ -80,7 +80,9 @@ class mne_processing:
         # Get the channel mappings in mne compliant form
         if 'mne_chtypes' in persistance_dict.keys():
             ch_types = persistance_dict['mne_chtypes']
+            montage  = persistance_dict['mne_montage']
         else:
+            #Create the mne channel types
             mapping      = yaml.safe_load(open(config_path,'r'))
             mapping_keys = list(mapping.keys())
             ch_types     = []
@@ -91,14 +93,15 @@ class mne_processing:
                     ch_types.append('eeg')
             persistance_dict['mne_chtypes'] = ch_types
 
-        # Create the mne object
-        info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
-        raw          = mne.io.RawArray(self.dataset.T, info,verbose=False)
-        montage      = mne.channels.make_standard_montage("standard_1020")
-        mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
-        montage.rename_channels(mne_chan_map)
+            # Create the mne montage
+            info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
+            montage      = mne.channels.make_standard_montage("standard_1020")
+            mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
+            montage.rename_channels(mne_chan_map)
+            persistance_dict['mne_montage'] = montage
 
-        # Set the montages
+        # Create the raw mne object and set the montages
+        raw = mne.io.RawArray(self.dataset.T, info,verbose=False)
         raw.set_montage(montage)
 
         # Create the ICA object and fit
