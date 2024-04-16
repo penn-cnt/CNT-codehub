@@ -415,3 +415,7 @@ if __name__ == "__main__":
     else:
         # Run a non parallel version.
         start_analysis(input_parameters, args, 0, None)
+    
+    # Final clean up of the terminal
+    sys.stdout.write("\033[H")
+    sys.stdout.flush()
