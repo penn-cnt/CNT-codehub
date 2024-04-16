@@ -270,7 +270,7 @@ class features:
         # Initialize some variables
         dummy_key       = list(self.metadata.keys())[0]
         channels        = self.metadata[dummy_key]['montage_channels']
-        self.feature_df = PD.DataFrame(columns=['file','t_start','t_end','dt','method','tag']+channels)
+        outcols         = ['file','t_start','t_end','dt','method','tag']+channels
         
         # Read in the feature configuration
         YL = config_loader(self.args.feature_file)
@@ -362,17 +362,23 @@ class features:
                         if (idx%5000==0):
 
                             # Dataframe creations
-                            iDF = PD.DataFrame(df_values,columns=self.feature_df.columns)
+                            iDF = PD.DataFrame(df_values,columns=outcols)
                             if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
-                                self.feature_df = PD.concat((self.feature_df,iDF))
+                                try:
+                                    self.feature_df = PD.concat((self.feature_df,iDF))
+                                except NameError:
+                                    self.feature_df = iDF.copy()
 
                             # Clean up the dummy list
                             df_values = []
 
                     # Dataframe creations
-                    iDF = PD.DataFrame(df_values,columns=self.feature_df.columns)
+                    iDF = PD.DataFrame(df_values,columns=outcols)
                     if not iDF[channels].isnull().values.all() and not iDF[channels].isna().values.all():
-                        self.feature_df = PD.concat((self.feature_df,iDF))
+                        try:
+                            self.feature_df = PD.concat((self.feature_df,iDF))
+                        except NameError:
+                            self.feature_df = iDF.copy()
 
                     # Downcast feature array to take up less space in physical and virtual memory. Use downcast first in case its a feature that cannot be made numeric
                     for ichannel in channels:
