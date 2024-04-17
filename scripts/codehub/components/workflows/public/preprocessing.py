@@ -54,15 +54,8 @@ class mne_processing:
     def make_montage_object(self,config_path):
 
         #Create the mne channel types
-        mapping      = yaml.safe_load(open(config_path,'r'))
-        mapping_keys = list(mapping.keys())
-        ch_types     = []
-        for ichannel in self.ppchannels:
-            if ichannel in mapping_keys:
-                ch_types.append(mapping[ichannel])
-            else:
-                ch_types.append('eeg')
-        persistance_dict['mne_chtypes'] = ch_types
+        mapping = yaml.safe_load(open(config_path,'r'))
+        persistance_dict['mne_mapping'] = mapping
 
     @silence_mne_warnings
     def eyeblink_removal(self,config_path,n_components=None,max_iter=1000):
@@ -91,9 +84,16 @@ class mne_processing:
                 raise FileNotFoundError("No valid MNE channel configuration file provided. Quitting.")
 
         # Get the channel mappings in mne compliant form
-        if 'mne_chtypes' not in persistance_dict.keys():
+        if 'mne_mspping' not in persistance_dict.keys():
             self.make_montage_object(config_path)
-        ch_types = persistance_dict['mne_chtypes']
+        mapping      = persistance_dict['mne_mapping']
+        mapping_keys = list(mapping.keys())
+        ch_types     = []
+        for ichannel in self.ppchannels:
+            if ichannel in mapping_keys:
+                ch_types.append(mapping[ichannel])
+            else:
+                ch_types.append('eeg')
 
         # Create the mne montage
         info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
