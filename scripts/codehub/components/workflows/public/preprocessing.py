@@ -99,13 +99,13 @@ class mne_processing:
 
         # Get the channel mappings in mne compliant form
         if 'mne_chtypes' in persistance_dict.keys():
-            ch_types      = persistance_dict['mne_chtypes']
             info,montage  = persistance_dict['mne_montage']
-
             if not np.in1d(self.ppchannels,info.ch_names).all():
                 self.make_montage_object(config_path)
         else:
             self.make_montage_object(config_path)
+        ch_types      = persistance_dict['mne_chtypes']
+        info,montage  = persistance_dict['mne_montage']
 
         # Create the raw mne object and set the montages
         raw = mne.io.RawArray(self.dataset.T, info,verbose=False)
