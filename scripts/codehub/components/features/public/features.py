@@ -39,17 +39,20 @@ class FOOOF_processing:
         fg = FOOOF(peak_width_limits=(2,12))
 
         # Report: fit the model, print the resulting parameters, and plot the reconstruction
-        fg.fit(self.freqs, self.initial_power_spectrum, self.freq_range)
+        if self.freqs.size > 0:
+            fg.fit(self.freqs, self.initial_power_spectrum, self.freq_range)
 
-        # get the one over f curve
-        b0,b1      = fg.get_results().aperiodic_params
-        one_over_f = b0-np.log10(self.freqs**b1)
+            # get the one over f curve
+            b0,b1      = fg.get_results().aperiodic_params
+            one_over_f = b0-np.log10(self.freqs**b1)
 
-        # Get the residual periodic fit
-        periodic_comp = self.initial_power_spectrum-one_over_f
+            # Get the residual periodic fit
+            periodic_comp = self.initial_power_spectrum-one_over_f
 
-        # Store the results for persistant fitting
-        persistance_dict[self.fooof_key] = (fg,self.freqs,periodic_comp)
+            # Store the results for persistant fitting
+            persistance_dict[self.fooof_key] = (fg,self.freqs,periodic_comp)
+        else:
+            persistance_dict[self.fooof_key] = (None,None,None)
 
     def check_persistance(self):
         self.fooof_key = f"fooof_{self.file}_{self.ichannel}"
@@ -68,9 +71,17 @@ class FOOOF_processing:
         # Make the optional tag to identify the dataslice
         self.optional_tag = ''
 
-        # Check for fooof model, then get aperiodic b0
+        # Check for fooof model
         self.check_persistance()
-        return persistance_dict[self.fooof_key][0].aperiodic_params_[0],self.optional_tag
+
+        # get the needed object from the persistance dictionary
+        fg = persistance_dict[self.fooof_key][0]
+        if fg != None:
+            b0 = fg.aperiodic_params_[0]
+        else:
+            b0 = None
+
+        return b0,self.optional_tag
     
     def fooof_aperiodic_b1(self):
         """
@@ -83,9 +94,17 @@ class FOOOF_processing:
         # Make the optional tag to identify the dataslice
         self.optional_tag = ''
 
-        # Check for fooof model, then get aperiodic b1
+        # Check for fooof model
         self.check_persistance()
-        return persistance_dict[self.fooof_key][0].aperiodic_params_[1],self.optional_tag
+
+        # get the needed object from the persistance dictionary
+        fg = persistance_dict[self.fooof_key][0]
+        if fg != None:
+            b1 = fg.aperiodic_params_[1]
+        else:
+            b1 = None
+
+        return b1,self.optional_tag
 
     def fooof_bandpower(self,lo_freq,hi_freq):
         """
@@ -100,14 +119,21 @@ class FOOOF_processing:
         hi_freq_str       = f"{hi_freq:.2f}"
         self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
 
-        # Check for fooof model, then get aperiodic b1
+        # Check for fooof model
         self.check_persistance()
+
+        # Get the needed object, then retrieve data
         x = persistance_dict[self.fooof_key][1]
-        y = persistance_dict[self.fooof_key][1]
+        y = persistance_dict[self.fooof_key][2]
 
         # Get the correct array slice to return the simpson integration
-        inds = (x>=lo_freq)&(x<hi_freq)
-        return simpson(y=y[inds],x=x[inds]),self.optional_tag
+        if x != None and y!= None:
+            inds = (x>=lo_freq)&(x<hi_freq)
+            intg = simpson(y=y[inds],x=x[inds])
+        else:
+            intg = None
+        return intg,self.optional_tag
+
 
 class signal_processing:
     """
