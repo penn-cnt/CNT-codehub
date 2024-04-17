@@ -127,7 +127,7 @@ class FOOOF_processing:
         y = persistance_dict[self.fooof_key][2]
 
         # Get the correct array slice to return the simpson integration
-        if x != None and y!= None:
+        if isinstance(x, np.ndarray):
             inds = (x>=lo_freq)&(x<hi_freq)
             intg = simpson(y=y[inds],x=x[inds])
         else:
