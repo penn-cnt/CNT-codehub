@@ -31,7 +31,7 @@ class mne_processing:
         """
         MNE Initilization
 
-        Args:
+        Args: 
             dataset (_type_): _description_
             fs (_type_): _description_
             mne_channels (_type_): _description_
@@ -50,6 +50,26 @@ class mne_processing:
             self.fs = np.unique(fs)[0]
         else:
             raise IndexError("MNE Processing requires that all sampling frequencies match. Please check input data or downsampling arguments.")
+
+    def make_montage_object(self,config_path):
+
+        #Create the mne channel types
+        mapping      = yaml.safe_load(open(config_path,'r'))
+        mapping_keys = list(mapping.keys())
+        ch_types     = []
+        for ichannel in self.ppchannels:
+            if ichannel in mapping_keys:
+                ch_types.append(mapping[ichannel])
+            else:
+                ch_types.append('eeg')
+        persistance_dict['mne_chtypes'] = ch_types
+
+        # Create the mne montage
+        info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
+        montage      = mne.channels.make_standard_montage("standard_1020")
+        mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
+        montage.rename_channels(mne_chan_map)
+        persistance_dict['mne_montage'] = (info,montage)
 
     @silence_mne_warnings
     def eyeblink_removal(self,config_path,n_components=None,max_iter=1000):
@@ -81,24 +101,11 @@ class mne_processing:
         if 'mne_chtypes' in persistance_dict.keys():
             ch_types      = persistance_dict['mne_chtypes']
             info,montage  = persistance_dict['mne_montage']
-        else:
-            #Create the mne channel types
-            mapping      = yaml.safe_load(open(config_path,'r'))
-            mapping_keys = list(mapping.keys())
-            ch_types     = []
-            for ichannel in self.ppchannels:
-                if ichannel in mapping_keys:
-                    ch_types.append(mapping[ichannel])
-                else:
-                    ch_types.append('eeg')
-            persistance_dict['mne_chtypes'] = ch_types
 
-            # Create the mne montage
-            info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
-            montage      = mne.channels.make_standard_montage("standard_1020")
-            mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
-            montage.rename_channels(mne_chan_map)
-            persistance_dict['mne_montage'] = (info,montage)
+            if not np.in1d(self.ppchannels,info.ch_names).all():
+                self.make_montage_object(config_path)
+        else:
+            self.make_montage_object(config_path)
 
         # Create the raw mne object and set the montages
         raw = mne.io.RawArray(self.dataset.T, info,verbose=False)
