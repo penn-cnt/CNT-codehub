@@ -184,6 +184,11 @@ class channel_montage:
                         raise ValueError("Cannot montage channels with different frequencies.")
                 except IndexError:
                     self.new_fs.append(np.nan)
+            
+            # Update in place the frequencies that did not update correctly
+            naninds          = np.isnan(self.new_fs)
+            newval           = np.unique(self.new_fs[~naninds])[0]
+            self.fs[naninds] = newval
 
         # Get the new montage channel labels
         self.montage_channels = [f"{ichannel[0]}-{ichannel[1]}" for ichannel in bipolar_array]
