@@ -21,15 +21,7 @@ from sklearn.linear_model import LogisticRegression
 
 # Project imports
 from models.lr import *
-from models.mlp import *
 from cleaning.data_clean import *
-
-def NN_handler(args,vectors,holdout):
-
-    NN = mlp(vectors,holdout)
-    NN.data_scale(stype='standard')
-    NN.data_split()
-    NN.run_network()
 
 def lr_handler(args,vectors,holdout):
 
@@ -38,7 +30,7 @@ def lr_handler(args,vectors,holdout):
         # Run a logistic regression model
         ntests     = 25
         lr_results = {'acc_train':{},'acc_test':{},'auc':{},'auc_holdout':{},'clf':{},'sratios':{}}
-        stypes     = ['minmax','standard','robust']
+        stypes     = ['standard']
         for itype in stypes:
             
             # Let user know the current scaler type
@@ -56,51 +48,7 @@ def lr_handler(args,vectors,holdout):
                 LRH.data_split()
                 acc_train,acc_test,auc,hold_auc,clf,sratios = LRH.simple_LR()
 
-                # Save the results
-                lr_results['acc_train'][itype].append(acc_train)
-                lr_results['acc_test'][itype].append(acc_test)
-                lr_results['auc'][itype].append(auc)
-                lr_results['auc_holdout'][itype].append(hold_auc)
-                lr_results['clf'][itype].append(clf)
-                lr_results['sratios'][itype].append(sratios)
-
-                # Make sure we randomize the training data
-                vectors.sample(frac=1)
-
-        pickle.dump(lr_results,open(args.model_output,"wb"))
-        pickle.dump(holdout,open("holdouts.pickle","wb"))
-    else:
-        lr_results = pickle.load(open(args.model_output,'rb'))
-        ntests     = len(lr_results['auc'][list(lr_results['auc'].keys())[0]])
-
-    # Make the outcome dataframe
-    LRDF         = PD.DataFrame(columns=['solver','auc','flag'])
-    LRDF2        = PD.DataFrame(columns=['solver','auc','flag'])
-    svals        = np.repeat(list(lr_results['auc'].keys()),ntests)
-    aucs         = np.array(list(lr_results['auc'].values())).flatten()
-    aucs_holdout = np.array(list(lr_results['auc_holdout'].values())).flatten()
-    accs         = np.array(list(lr_results['acc_test'].values())).flatten()
-    LRDF['solver']   = svals
-    LRDF['auc']      = aucs
-    LRDF['dataset']  = 'testdata'
-    LRDF['acc']      = accs
-    LRDF2['solver']  = svals
-    LRDF2['auc']     = aucs_holdout
-    LRDF2['dataset'] = 'holdouts'
-    LRDF_COMB = PD.concat((LRDF,LRDF2))
-
-    # Plot the results
-    fig = PLT.figure(dpi=100.,figsize=(5.,5.))
-    ax1 = fig.add_subplot(111)
-    sns.boxplot(data=LRDF_COMB, x="solver", y="auc", fill=False, hue="dataset",ax=ax1)
-    ax1.set_title(f"{args.ptitle}",fontsize=14)
-    PLT.show()
-
-    fig = PLT.figure(dpi=100.,figsize=(5.,5.))
-    ax1 = fig.add_subplot(111)
-    sns.boxplot(data=LRDF, x="solver", y="acc", fill=False,ax=ax1, hue='dataset')
-    ax1.set_title(f"{args.ptitle}",fontsize=14)
-    PLT.show()
+                print(acc_train,acc_test,auc,hold_auc)
 
 def reshape_dataframe(df,channels):
     reshaped_data = {}
@@ -117,6 +65,7 @@ if __name__ == '__main__':
     
     # Command line options needed to obtain data.
     parser = argparse.ArgumentParser(description="iEEG to bids conversion tool.")
+    parser.add_argument("--lr_file", type=str, required=True, help="Filepath to slowing lr fitter.")
     parser.add_argument("--dataset", type=str, required=True, help="Output Dataset Filepath for initial cleanup.")
     parser.add_argument("--model_file", type=str, default="../../user_data/derivative/slowing/032924/merged_model.pickle", help="Merged Model file path.")
     parser.add_argument("--map_file", type=str, default="../../user_data/derivative/slowing/032924/merged_map.pickle", help="Merged map file path.")
@@ -126,7 +75,6 @@ if __name__ == '__main__':
     parser.add_argument("--ptitle", type=str, default='', help="Plot title.")
     parser.add_argument("--drop_peak", action='store_true', default=False, help="Dont use peak info.")
     parser.add_argument("--no_strat", action='store_true', default=False, help="Dont use peak info.")
-    parser.add_argument("--lr", action='store_true', default=False, help="Run logistic regression.")
     args = parser.parse_args()
 
     # Create dataset as needed
@@ -144,11 +92,6 @@ if __name__ == '__main__':
         # Prepare the data
         DP = DATA_PREP(DF)
         DP.get_channels()
-        DP.update_targets(mapping)
-        if not args.drop_peak:
-            DP.peak_freqs()
-        else:
-            DP.drop_peak()
         DF,channels = DP.return_data()
 
         # Loop over columns and downcast
@@ -180,8 +123,7 @@ if __name__ == '__main__':
     # Apply PCA
     if args.pca and not os.path.exists(args.model_output):
         print("Applying PCA...")
-        pca_enc              = SparsePCA(n_components=args.npca,n_jobs=6)
-        #pca_enc              = PCA(n_components=args.npca, svd_solver='full')
+        pca_enc              = PCA(n_components=args.npca, svd_solver='full')
         rawvectors_trans     = pca_enc.fit_transform(rawvectors[channels].values)
         channels             = [f"{ii:03d}" for ii in range(rawvectors_trans.shape[1])]
         rawvectors           = PD.DataFrame(rawvectors_trans,columns=channels)
@@ -191,9 +133,8 @@ if __name__ == '__main__':
     # Create a hold out dataset
     vectors, holdout = train_test_split(rawvectors,test_size=0.2,stratify=targets)
 
-    # Run the LR
-    if args.lr:
-        lr_handler(args,vectors,holdout)
+    # Get the predictions
+    #clf = pickle.load(open(args.lr_file,"rb"))['clf']['standard']
 
-    # Run the NN
-    #NN_handler(args,vectors,holdout)
+    # Run the LR
+    lr_handler(args,vectors,holdout)

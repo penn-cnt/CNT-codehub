@@ -47,7 +47,7 @@ class DATA_PREP:
     def get_channels(self):
 
         # Get the channel columns
-        nonchan       = ['file','t_start','tag','TUEG']
+        nonchan       = ['file','t_start','tag','TUEG','uid','annotation']
         self.channels = np.setdiff1d(self.DF.columns,nonchan)
 
     def update_targets(self,mapping):
@@ -122,6 +122,12 @@ class make_inputs:
         print(f"After frequency squeeze, dataframe went from {orig_shape[0]} rows to {self.DF.shape[0]} rows.")
 
     def vector_creation(self):
+
+        # Some cleanup to make this match tueg slowing for now
+        self.DF.drop(['uid','annotation'],axis=1,inplace=True)
+        self.DF = self.DF.rename(columns={'target':'TUEG'})
+        self.DF = self.DF.loc[self.DF.TUEG.isin([0,3])]
+        self.DF['TUEG'].replace(3,1,inplace=True)
 
         # Attempt to make the vector inputs
         self.DF = self.DF.drop_duplicates(subset=['file','t_start','tag'])
