@@ -40,8 +40,9 @@ if __name__ == '__main__':
 
             # Read in data and clean up
             print(f"Working on {ifile}.")
-            iDF = PD.read_pickle(ifile)
-            iDF = iDF.drop(drop_cols,axis=1)
+            iDF        = PD.read_pickle(ifile)
+            iDF['tag'] = iDF['method']+'_'+iDF['tag']
+            iDF        = iDF.drop(drop_cols,axis=1)
 
             # Get the model columns
             model_cols = [icol for icol in iDF.columns if icol not in obj_cols]
