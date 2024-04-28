@@ -2,6 +2,7 @@ import os
 import pickle
 import argparse
 import pandas as PD
+from sklearn.decomposition import SparsePCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
@@ -223,8 +224,8 @@ if __name__ == '__main__':
     parser.add_argument("--output_TUEG", type=str, default=f"{default_out}dataset_TUEG.pickle", help="TUEG Merged map file path.")
     parser.add_argument("--output_HUP", type=str, default=f"{default_out}dataset_HUP.pickle", help="TUEG Merged map file path.")
     parser.add_argument("--slowing_output", type=str, default=f"{default_out}slowing.model", help="Slowing LR output.")
-    parser.add_argument("--tueg_subject_map", type=str, default="/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/slowing/041724/DATA/map_file_sub_tueg.pickle")
-    parser.add_argument("--HUP_subject_map", type=str, default="/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/DATA/map_file_sub.pickle")
+    parser.add_argument("--tueg_subject_map", type=str, default=f"{default_tueg}map_file_sub_tueg.pickle")
+    parser.add_argument("--HUP_subject_map", type=str, default=f"{default_hup}map_file_sub.pickle")
     parser.add_argument("--epilepsy_output_noslow", type=str, default=f"{default_out}epilepsy_noslow.model", help="Epilepsy LR output.")
     parser.add_argument("--epilepsy_output_slow", type=str, default=f"{default_out}epilepsy_slow.model", help="Epilepsy LR output.")
     parser.add_argument("--ncpu", type=int, default=8, help="Number of cpus to use for cross validation.")
@@ -253,9 +254,9 @@ if __name__ == '__main__':
             TUEG_TRAIN, TUEG_TEST = subject_split(RAWVECTORS_TUEG,0.2,args.tueg_subject_map)
 
         # Save the output
-        pickle.dump((TUEG_TRAIN,TUEG_TEST),open(args.output_TUEG,"wb"))
+        pickle.dump((TUEG_TRAIN,TUEG_TEST,CHANNELS_TUEG),open(args.output_TUEG,"wb"))
     else:
-        TUEG_TRAIN, TUEG_TEST = pickle.load(open(args.output_TUEG,"rb"))
+        TUEG_TRAIN, TUEG_TEST, CHANNELS_TUEG = pickle.load(open(args.output_TUEG,"rb"))
 
     if not os.path.exists(args.output_HUP):
         # Read in the HUP data
@@ -270,9 +271,9 @@ if __name__ == '__main__':
             HUP_TRAIN, HUP_TEST = subject_split(RAWVECTORS_HUP,0.2,args.HUP_subject_map)
 
         # Save the output
-        pickle.dump((HUP_TRAIN,HUP_TEST),open(args.output_HUP,"wb"))
+        pickle.dump((HUP_TRAIN,HUP_TEST,CHANNELS_HUP),open(args.output_HUP,"wb"))
     else:
-        HUP_TRAIN, HUP_TEST = pickle.load(open(args.output_HUP,"rb"))
+        HUP_TRAIN, HUP_TEST, CHANNELS_HUP = pickle.load(open(args.output_HUP,"rb"))
 
     # Make the LR flag string
     if args.lr_cv:
@@ -284,6 +285,9 @@ if __name__ == '__main__':
     if args.pca:
         
         # Make and fit the transformer
+        print(CHANNELS_TUEG)
+        import sys
+        sys.exit()
         pca_enc = SparsePCA(n_components=args.npca,n_jobs=args.ncpu)
         pca_enc.fit(TUEG_TRAIN[CHANNELS_TUEG].values)
 
