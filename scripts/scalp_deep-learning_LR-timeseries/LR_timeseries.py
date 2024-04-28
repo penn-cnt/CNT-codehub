@@ -155,7 +155,7 @@ def prepare_TUEG(DF_TUEG,MAP_TUEG):
     colorder   = ['file','t_start']+list(channels)+['target']
     rawvectors = rawvectors[colorder]
 
-    return rawvectors.drop_duplicates(subset=['file','t_start'])
+    return rawvectors.drop_duplicates(subset=['file','t_start']),channels
 
 def prepare_HUP(DF_HUP,MAP_HUP):
 
@@ -183,7 +183,7 @@ def prepare_HUP(DF_HUP,MAP_HUP):
     colorder   = ['file','t_start']+list(channels)+['target']
     rawvectors = rawvectors[colorder]
 
-    return rawvectors.drop_duplicates(subset=['file','t_start'])
+    return rawvectors.drop_duplicates(subset=['file','t_start']),channels
 
 def add_slowing_prob(DF,clf_list):
 
@@ -198,12 +198,23 @@ def add_slowing_prob(DF,clf_list):
     DF['slow_1'] = posterior[:,1]
     return DF
 
+def apply_pca(enc,DF,CHANNELS):
+
+        rawvectors_trans = pca_enc.transform(DF[CHANNELS].values)
+        channels         = [f"{ii:03d}" for ii in range(rawvectors_trans.shape[1])]
+        new_df           = PD.DataFrame(rawvectors_trans,columns=channels)
+        new_df['target'] = DF['target'].values
+        return new_df,channels
+
 if __name__ == '__main__':
 
     # Command line options needed to obtain data.
-    default_tueg = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/slowing/041724/DATA/'
-    default_hup  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/DATA/'
-    default_out  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/MODEL/SUBJECT/'
+    #default_tueg = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/slowing/041724/DATA/'
+    #default_hup  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/DATA/'
+    #default_out  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/MODEL/SUBJECT/'
+    default_tueg = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/DATA/TUEG/'
+    default_hup  = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/DATA/HUP/'
+    default_out  = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/MODEL/'
     parser = argparse.ArgumentParser(description="iEEG to bids conversion tool.")
     parser.add_argument("--model_TUEG", type=str, default=f"{default_tueg}merged_model.pickle", help="TUEG Merged Model file path.")
     parser.add_argument("--map_TUEG", type=str, default=f"{default_tueg}merged_map.pickle", help="TUEG Merged map file path.")
@@ -217,6 +228,8 @@ if __name__ == '__main__':
     parser.add_argument("--epilepsy_output_noslow", type=str, default=f"{default_out}epilepsy_noslow.model", help="Epilepsy LR output.")
     parser.add_argument("--epilepsy_output_slow", type=str, default=f"{default_out}epilepsy_slow.model", help="Epilepsy LR output.")
     parser.add_argument("--ncpu", type=int, default=8, help="Number of cpus to use for cross validation.")
+    parser.add_argument("--pca", action='store_true', default=False, help="Apply PCA first.")
+    parser.add_argument("--npca", type=int, default=50, help="Number of PCA components")
     
     selection_group = parser.add_mutually_exclusive_group()
     selection_group.add_argument("--temporal", action='store_true', default=False, help="Temporal split.")
@@ -233,7 +246,7 @@ if __name__ == '__main__':
         MAP_TUEG = pickle.load(open(args.map_TUEG,"rb"))
 
         # Prepare temple
-        RAWVECTORS_TUEG = prepare_TUEG(DF_TUEG,MAP_TUEG)
+        RAWVECTORS_TUEG,CHANNELS_TUEG = prepare_TUEG(DF_TUEG,MAP_TUEG)
         if args.temporal:
             TUEG_TRAIN, TUEG_TEST = temporal_split(RAWVECTORS_TUEG,0.2)
         else:
@@ -250,7 +263,7 @@ if __name__ == '__main__':
         MAP_HUP = pickle.load(open(args.map_HUP,"rb"))
 
         # Prepare HUP
-        RAWVECTORS_HUP = prepare_HUP(DF_HUP,MAP_HUP)
+        RAWVECTORS_HUP,CHANNELS_HUP = prepare_HUP(DF_HUP,MAP_HUP)
         if args.temporal:
             HUP_TRAIN, HUP_TEST = temporal_split(RAWVECTORS_HUP,0.2)
         else:
@@ -267,6 +280,19 @@ if __name__ == '__main__':
     else:
         lrtype = 'simple'
 
+    # Apply PCA if needed
+    if args.pca:
+        
+        # Make and fit the transformer
+        pca_enc = SparsePCA(n_components=args.npca,n_jobs=args.ncpu)
+        pca_enc.fit(TUEG_TRAIN[CHANNELS_TUEG].values)
+
+        # Apply PCA to our data
+        TUEG_TRAIN,CHANNELS_TUEG = apply_pca(pca_enc,TUEG_TRAIN,CHANNELS_TUEG)
+        TUEG_TEST,CHANNELS_TUEG  = apply_pca(pca_enc,TUEG_TEST,CHANNELS_TUEG)
+        HUP_TRAIN,CHANNELS_HUP   = apply_pca(pca_enc,HUP_TRAIN,CHANNELS_HUP)
+        HUP_TEST,CHANNELS_HUP    = apply_pca(pca_enc,HUP_TEST,CHANNELS_HUP)
+
     # Make the logistic regression fit for TUEG slowing
     clf_slow       = lr_handler(args.slowing_output,TUEG_TRAIN,TUEG_TEST,'Slowing Prediction for time segments',lrtype,args.ncpu)
     clf_epi_noslow = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu)
@@ -276,4 +302,4 @@ if __name__ == '__main__':
     HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
     
     # Get the predictions with slowing added
-    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing')
+    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu)
