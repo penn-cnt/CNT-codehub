@@ -286,6 +286,7 @@ if __name__ == '__main__':
         
         # Make and fit the transformer
         print(CHANNELS_TUEG)
+        print(TUEG_TRAIN.info)
         import sys
         sys.exit()
         pca_enc = SparsePCA(n_components=args.npca,n_jobs=args.ncpu)
