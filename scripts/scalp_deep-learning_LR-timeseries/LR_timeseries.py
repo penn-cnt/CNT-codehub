@@ -253,8 +253,10 @@ if __name__ == '__main__':
         # Prepare temple
         RAWVECTORS_TUEG,CHANNELS_TUEG = prepare_TUEG(DF_TUEG,MAP_TUEG)
         if args.temporal:
+            print("Performing Temporal Split.")
             TUEG_TRAIN, TUEG_TEST = temporal_split(RAWVECTORS_TUEG,0.2)
         else:
+            print("Performing Subject Split.")
             TUEG_TRAIN, TUEG_TEST = subject_split(RAWVECTORS_TUEG,0.2,args.tueg_subject_map)
 
         # Save the output
@@ -270,8 +272,10 @@ if __name__ == '__main__':
         # Prepare HUP
         RAWVECTORS_HUP,CHANNELS_HUP = prepare_HUP(DF_HUP,MAP_HUP)
         if args.temporal:
+            print("Performing Temporal Split.")
             HUP_TRAIN, HUP_TEST = temporal_split(RAWVECTORS_HUP,0.2)
         else:
+            print("Performing Subject Split.")
             HUP_TRAIN, HUP_TEST = subject_split(RAWVECTORS_HUP,0.2,args.HUP_subject_map)
 
         # Save the output
