@@ -88,7 +88,7 @@ class LR_handler:
         return LogisticRegression(max_iter=500,solver='liblinear').fit(self.X_train, self.Y_train.flatten())
 
     def CV_LR(self):
-        return LogisticRegressionCV(cv=10,max_iter=500,solver='sag', n_jobs=self.ncpu).fit(self.X_train, self.Y_train.flatten())
+        return LogisticRegressionCV(cv=10,max_iter=500,solver='sag', n_jobs=self.ncpu, tol=1e-3).fit(self.X_train, self.Y_train.flatten())
     
     def return_values(self):
 
