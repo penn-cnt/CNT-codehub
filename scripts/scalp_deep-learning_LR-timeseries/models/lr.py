@@ -59,11 +59,13 @@ class LR_handler:
         if user_scaler == None:
             scaler.fit(self.X)
         self.X_scaled = scaler.transform(self.X[:,self.chan_inds])
-        self.X_scaled = np.hstack((self.X_scaled,self.X[:,self.slow_inds]))
+        if self.slow_inds.size > 0:
+            self.X_scaled = np.hstack((self.X_scaled,self.X[:,self.slow_inds]))
 
         # Get the holdout fit
         self.hold_X_scaled = scaler.transform(self.hold_X[:,self.chan_inds])
-        self.hold_X_scaled = np.hstack((self.hold_X_scaled,self.hold_X[:,self.slow_inds]))
+        if self.slow_inds.size > 0:
+            self.hold_X_scaled = np.hstack((self.hold_X_scaled,self.hold_X[:,self.slow_inds]))
 
         return scaler
 
