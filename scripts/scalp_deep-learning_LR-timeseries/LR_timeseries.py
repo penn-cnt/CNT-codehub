@@ -10,13 +10,13 @@ from sklearn.model_selection import train_test_split
 from models.lr import *
 from cleaning.data_clean import *
 
-def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu):
+def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu,user_scaler_list=None):
 
     # Run tests as needed
     if not os.path.exists(output_path):
         # Run a logistic regression model
         ntests     = 10
-        lr_results = {'acc_train':{},'acc_test':{},'auc':{},'auc_holdout':{},'clf':{},'sratios':{}}
+        lr_results = {'acc_train':{},'acc_test':{},'auc':{},'auc_holdout':{},'clf':{},'sratios':{},'scaler':{}}
         stypes     = ['minmax','standard']
         for itype in stypes:
             
@@ -30,8 +30,11 @@ def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu):
             for idx in tqdm(range(ntests), total=ntests):
 
                 # Run the logistic regression model
-                LRH = LR_handler(vectors,holdout,ncpu)
-                LRH.data_scale(stype=itype)
+                LRH    = LR_handler(vectors,holdout,ncpu)
+                if user_scaler_list == None:
+                    scaler = LRH.data_scale(stype=itype)
+                else:
+                    scaler = LRH.data_scale(stype=itype,user_scaler=user_scaler_list[idx])
                 LRH.data_split()
                 acc_train,acc_test,auc,hold_auc,clf = LRH.LR_process(lrtype)
 
@@ -41,6 +44,7 @@ def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu):
                 lr_results['auc'][itype].append(auc)
                 lr_results['auc_holdout'][itype].append(hold_auc)
                 lr_results['clf'][itype].append(clf)
+                lr_results['scaler'][itype].append(clf)
 
                 # Make sure we randomize the training data
                 vectors.sample(frac=1)
@@ -74,7 +78,7 @@ def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu):
     PLT.grid(True)
     PLT.show()
 
-    return lr_results['clf']['standard']
+    return lr_results['clf']['standard'],lr_results['scaler']['standard']
 
 def temporal_split(DF,test_fraction):
 
@@ -295,12 +299,12 @@ if __name__ == '__main__':
         HUP_TEST,CHANNELS_HUP    = apply_pca(pca_enc,HUP_TEST,CHANNELS_HUP)
 
     # Make the logistic regression fit for TUEG slowing
-    clf_slow       = lr_handler(args.slowing_output,TUEG_TRAIN,TUEG_TEST,'Slowing Prediction for time segments',lrtype,args.ncpu)
-    clf_epi_noslow = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu)
+    clf_slow,scaler_slow = lr_handler(args.slowing_output,TUEG_TRAIN,TUEG_TEST,'Slowing Prediction for time segments',lrtype,args.ncpu)
+    clf_epi_noslow       = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)
 
     # Get the predictions for slowing for HUP
     HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
     HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
     
     # Get the predictions with slowing added
-    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu)
+    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)

@@ -32,24 +32,27 @@ class LR_handler:
         self.hold_Y  = holdout[self.Y_cols].values
         self.ncpu    = ncpu
 
-    def data_scale(self,stype='minmax'):
+    def data_scale(self,stype='standard',user_scaler=None):
 
         if stype.lower() not in ['minmax','standard','robust']:
             print("Could not find {stype} scaler. Defaulting to Standard")
             stype = 'standard'
 
-        if stype.lower() == 'minmax':
+        if stype.lower() == 'minmax' and user_scaler == None:
             scaler = MinMaxScaler()
-        elif stype.lower() == 'standard':
+        elif stype.lower() == 'standard' and user_scaler == None:
             scaler = StandardScaler()
-        elif stype.lower() == 'robust':
+        elif stype.lower() == 'robust' and user_scaler == None:
             scaler = RobustScaler()
 
-        scaler.fit(self.X)
+        if user_scaler == None:
+            scaler.fit(self.X)
         self.X_scaled = scaler.transform(self.X)
 
         # Get the holdout fit
         self.hold_X_scaled = scaler.transform(self.hold_X)
+
+        return scaler
 
     def data_split(self):
         self.X_train, self.X_test, self.Y_train, self.Y_test = train_test_split(self.X_scaled, self.Y, stratify=self.Y, test_size=0.3)
