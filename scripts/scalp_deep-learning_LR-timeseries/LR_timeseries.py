@@ -306,7 +306,5 @@ if __name__ == '__main__':
     HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
     HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
 
-    print(HUP_TRAIN_scaled.columns)
-    
     # Get the predictions with slowing added
-    #clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)
+    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)

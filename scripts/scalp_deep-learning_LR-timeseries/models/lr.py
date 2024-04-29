@@ -22,15 +22,24 @@ from sklearn.linear_model import LogisticRegression,LogisticRegressionCV
 class LR_handler:
 
     def __init__(self,vectors,holdout,ncpu):
-        self.incols  = vectors.columns
-        self.vectors = vectors
-        self.X_cols  = self.incols[self.incols!='target']
-        self.Y_cols  = self.incols[self.incols=='target']
-        self.X       = vectors[self.X_cols].values
-        self.Y       = vectors[self.Y_cols].values
-        self.hold_X  = holdout[self.X_cols].values
-        self.hold_Y  = holdout[self.Y_cols].values
-        self.ncpu    = ncpu
+        self.incols    = vectors.columns
+        self.vectors   = vectors
+        self.X_cols    = self.incols[self.incols!='target']
+        self.Y_cols    = self.incols[self.incols=='target']
+        self.X         = vectors[self.X_cols].values
+        self.Y         = vectors[self.Y_cols].values
+        self.hold_X    = holdout[self.X_cols].values
+        self.hold_Y    = holdout[self.Y_cols].values
+        self.ncpu      = ncpu
+        self.chan_inds = []
+        self.slow_inds = []
+        for idx in range(self.X_cols.size):
+            if self.X_cols[idx] not in ['slow_0', 'slow_1']:
+                self.chan_inds.append(idx)
+            else:
+                self.slow_inds.append(idx)
+        self.chan_inds = np.array(self.chan_inds)
+        self.slow_inds = np.array(self.slow_inds)
 
     def data_scale(self,stype='standard',user_scaler=None):
 
@@ -49,10 +58,12 @@ class LR_handler:
 
         if user_scaler == None:
             scaler.fit(self.X)
-        self.X_scaled = scaler.transform(self.X)
+        self.X_scaled = scaler.transform(self.X[self.chan_inds])
+        self.X_scaled = np.hstack((self.X_scaled,self.X[self.slow_inds]))
 
         # Get the holdout fit
-        self.hold_X_scaled = scaler.transform(self.hold_X)
+        self.hold_X_scaled = scaler.transform(self.hold_X[self.chan_inds])
+        self.hold_X_scaled = np.hstack((self.hold_X_scaled,self.hold_X[self.slow_inds]))
 
         return scaler
 
