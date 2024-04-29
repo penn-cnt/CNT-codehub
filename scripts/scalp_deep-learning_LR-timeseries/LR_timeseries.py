@@ -300,11 +300,13 @@ if __name__ == '__main__':
 
     # Make the logistic regression fit for TUEG slowing
     clf_slow,scaler_slow = lr_handler(args.slowing_output,TUEG_TRAIN,TUEG_TEST,'Slowing Prediction for time segments',lrtype,args.ncpu)
-    #clf_epi_noslow       = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)
+    clf_epi_noslow       = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu)
 
     # Get the predictions for slowing for HUP
-    #HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
-    #HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
+    HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
+    HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
+
+    print(HUP_TRAIN_scaled.columns)
     
     # Get the predictions with slowing added
     #clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)
