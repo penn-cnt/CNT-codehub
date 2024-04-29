@@ -44,7 +44,7 @@ def lr_handler(output_path,vectors,holdout,ptitle,lrtype,ncpu,user_scaler_list=N
                 lr_results['auc'][itype].append(auc)
                 lr_results['auc_holdout'][itype].append(hold_auc)
                 lr_results['clf'][itype].append(clf)
-                lr_results['scaler'][itype].append(clf)
+                lr_results['scaler'][itype].append(scaler)
 
                 # Make sure we randomize the training data
                 vectors.sample(frac=1)

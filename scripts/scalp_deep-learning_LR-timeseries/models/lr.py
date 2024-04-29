@@ -44,6 +44,8 @@ class LR_handler:
             scaler = StandardScaler()
         elif stype.lower() == 'robust' and user_scaler == None:
             scaler = RobustScaler()
+        else:
+            scaler = user_scaler
 
         if user_scaler == None:
             scaler.fit(self.X)
