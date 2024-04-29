@@ -41,6 +41,9 @@ class LR_handler:
         self.chan_inds = np.array(self.chan_inds)
         self.slow_inds = np.array(self.slow_inds)
 
+        print(self.chan_inds)
+        print(self.chan_inds.size)
+
     def data_scale(self,stype='standard',user_scaler=None):
 
         if stype.lower() not in ['minmax','standard','robust']:
