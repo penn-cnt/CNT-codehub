@@ -14,6 +14,7 @@ dependencies:
   - pytorch
   - scikit-learn
   - paramiko
+  - nltk
   - pip:
     - pennprov
     - mne

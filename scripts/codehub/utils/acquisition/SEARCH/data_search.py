@@ -86,8 +86,12 @@ class cache_search:
         """
         new_index = []
         for idx,ival in enumerate(list(self.dataslice[subcol].values)):
-            if substr in ival.lower():
-                new_index.append(idx)
+            if type(ival) == str:
+                if substr in ival.lower():
+                    new_index.append(idx)
+            else:
+                if int(substr) == int(ival):
+                    new_index.append(idx)
         self.dataslice = self.dataslice.iloc[new_index]
 
     def display(self):
@@ -97,7 +101,7 @@ class cache_search:
         table.field_names = self.dataslice.columns.tolist()
 
         # Step through the data and populate the pretty table with the current dataslice
-        for idx, row in enumerate(self.dataslice.itertuples()):
+        for idx, row in enumerate(self.dataslice[:100].itertuples()):
             table.add_row(list(row)[1:])
 
         # Display pretty table
@@ -109,7 +113,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Check for data in the CNT cache.")
     parser.add_argument("--username", required=True, help="Username on the host system.")
     parser.add_argument("--host", default="borel.seas.upenn.edu", help="Host system for the data cache.")
-    parser.add_argument("--path", default='/mnt/leif/littlab/cache/Human_Data/BIDS/subject_map.csv', help="Path to the database file with cache info.")
+    parser.add_argument("--path", default='/mnt/leif/littlab/cache/Human_Data/UPDATED_BIDS/subject_map.csv', help="Path to the database file with cache info.")
     args = parser.parse_args()
 
     # Get the host password
@@ -121,4 +125,4 @@ if __name__ == '__main__':
     cache = SC.read_data_collection()
 
     # Display the data collection
-    CS = cache_search(cache[:150])
+    CS = cache_search(cache)

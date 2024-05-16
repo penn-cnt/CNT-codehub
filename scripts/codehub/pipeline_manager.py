@@ -389,15 +389,13 @@ if __name__ == "__main__":
 
         # Calculate the size of each subset based on the number of processes
         subset_size  = input_parameters.shape[0] // args.ncpu
-        list_subsets = [input_parameters[i:i + subset_size] for i in range(0, input_parameters.shape[0], subset_size)]
+        #list_subsets = [input_parameters[i:i + subset_size] for i in range(0, input_parameters.shape[0], subset_size)]
+        list_subsets = [input_parameters[i:i + subset_size] for i in range(0, subset_size*args.ncpu, subset_size)]
 
         # Handle leftovers
-        if len(list_subsets) > args.ncpu:
-            arr_ncpu  = list_subsets[args.ncpu-1]
-            arr_ncpu1 = list_subsets[args.ncpu]
-
-            list_subsets[args.ncpu-1] = np.concatenate((arr_ncpu,arr_ncpu1), axis=0)
-            list_subsets.pop(-1)
+        remainder = file_indices[args.ncpu*subset_size:]
+        for idx,ival in enumerate(remainder):
+            list_subsets[idx] = np.concatenate((list_subsets[idx],np.array([ival])))
 
         # Create a barrier for synchronization
         barrier = multiprocessing.Barrier(args.ncpu)

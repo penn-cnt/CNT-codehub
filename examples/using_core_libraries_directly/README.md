@@ -1,10 +1,14 @@
 # Directly accessing the core libraries
 
-There are two methods for using the core libraries kept within this framework. We recommend the first method, but a brief description of the second is provided for edification.
+There are two methods for using the core libraries kept within this framework. The first is via the pipeline manager, and is designed primarily for use with the main EPIPY package for processing large volumes of data. The second is via direct invocation of the underlying code. This allows for scripting, interactive calls, and building new pipeline logic with the underlying code.
 
-## Direct Inputs Method
+To directly invoke a library, you simply call the `direct_inputs` method for each class. You can call the document string for more info on how each class' direct method works, as different tasks may require different inputs.
 
-Each addon module includes a direct_inputs method to pass each module data and obtain its relevant output. An example for the montage class is as follows:
+To find out what arguments are allowed for each class, you can either run the pipeline manager (found [here](../scripts/codehub/)) as follows `pipeline_manager.py --help` to get all the documentation, or you can directly view the allowed arguments and their help strings [here](../scripts/codehub/allowed_arguments.yaml).
+
+## Example Direct Inputs Method
+
+An example for the montage class is as follows:
 ```
     def direct_inputs(self,DF,montage):
         """
@@ -27,13 +31,17 @@ Each addon module includes a direct_inputs method to pass each module data and o
         return PD.DataFrame(montage_data,columns=self.montage_channels)
 ```
 
-For example, I could call on this method in the following way (assuming I have the scripts/codehub/ in my PythonPath):
+For a complete example of how to read in, clean, and montage a dataframe please see [here](./example_direct_invocation.py).
+
+## Sample Instantiation
+
+An example of montaging data can be accomplished as follows (assuming you have the scripts/codehub/ in my PythonPath):
 
 ```
 from modules.addons.channel_montage import channel_montage
 
 # Dataframe generation
-DF = **Your datafrme here**
+DF = **Your dataframe here**
 
 # Montage choice
 montage = "hup1020"

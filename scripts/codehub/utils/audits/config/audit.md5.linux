@@ -1,2 +1,2 @@
-find INDIR_SUBSTR -type f -exec sh -c 'echo -n "{} " && md5 "{}" | cut -d" " -f1 && stat -c "%s" "{}" | awk "{printf \"%.2f MB\n\", \$1/1024/1024}" && stat -c "%y" "{}" | cut -d" " -f1 && stat -c "%U" "{}"' \; > OUTDIR_SUBSTR
+find "INDIR_SUBSTR" -maxdepth 1 -type f -not -path '*._*' -not -path '*~$*' -exec sh -c 'echo -n "{} " && md5 "{}" | cut -d" " -f1 && stat -c "%s" "{}" | awk "{printf \"%.2f MB\n\", \$1/1024/1024}" && stat -c "%y" "{}" | cut -d" " -f1 && stat -c "%U" "{}"' \; > "OUTDIR_SUBSTR"
 

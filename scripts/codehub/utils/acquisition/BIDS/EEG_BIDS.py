@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import pandas as PD
 from os import path
+from sys import exit
 from time import sleep
 
 # Locate import
@@ -13,22 +14,6 @@ from modules.iEEG_handler import ieeg_handler
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
-
-def get_proposal_subnums(args,input_data):
-
-    files = glob.glob(args.bidsroot+'sub-*')
-    if len(files) > 0:
-        existing_subnums = np.array([int(ifile.split('sub-')[-1]) for ifile in files])
-    else:
-        existing_subnums = np.array([0])
-    uuid            = np.unique(input_data['uid'].values)
-    uuid_sub        = np.arange(uuid.size+existing_subnums.max())+1
-    uuid_sub        = np.setdiff1d(uuid_sub,existing_subnums)[:uuid.size]
-    subject_mapping = dict(zip(uuid.ravel(),uuid_sub.ravel()))
-    subject_array   = [subject_mapping[ival] for ival in input_data['uid'].values]
-    input_data['proposed_subnum'] = subject_array
-    
-    return input_data
 
 if __name__ == '__main__':
 
@@ -53,14 +38,18 @@ if __name__ == '__main__':
     bids_group = parser.add_argument_group('BIDS options')
     bids_group.add_argument("--bidsroot", type=str, required=True, help="Bids Root Directory.")
     bids_group.add_argument("--session", type=str, required=True, help="Base string session keyword for BIDS. (i.e. 'preimplant')")
+    bids_group.add_argument("--session_num", type=int, default=-1, help="Session number for this file.")
 
     other_group = parser.add_argument_group('Other options')
     other_group.add_argument("--inputs_file", type=str, help="Optional file of input datasets to (download and) turn into BIDS.")
     other_group.add_argument("--subject_file", type=str, default='subject_map.csv', help="File mapping subject id to ieeg file. (Defaults to bidroot+'subject_map.csv)")
-    other_group.add_argument("--uid", default=0, type=str, help="Unique patient identifier for single ieeg calls. This is to map patients across different admissions. See sample subject_map.csv file for an example.")
+    other_group.add_argument("--uid", default=0, type=int, help="Unique patient identifier for single ieeg calls. This is to map patients across different admissions. See sample subject_map.csv file for an example.")
+    other_group.add_argument("--subnum", default=0, type=int, help="Subject number to use for the bids folders.")
     other_group.add_argument("--target", default=None, type=str, help="Target value to associate with single subject inputs. (i.e. epilepsy vs. pnes)")
     other_group.add_argument("--multithread", action='store_true', default=False, help="Multithreaded download.")
     other_group.add_argument("--ncpu", default=1, type=int, help="Number of CPUs to use when downloading.")
+    other_group.add_argument("--debug", action='store_true', default=False, help="Print error messages.")
+    other_group.add_argument("--skipzero", action='store_true', default=False, help="Time zero is almost always garbage data. This flag skips it. Good for quickly going back over data to catch missed iEEG calls.")
 
     selection_group = parser.add_mutually_exclusive_group()
     selection_group.add_argument("--cli", action='store_true', default=False, help="Use start and duration from this CLI.")
@@ -72,11 +61,11 @@ if __name__ == '__main__':
         args.bidsroot += '/'
 
     # Input data array generation
-    incols = ['uid','orig_filename','start','duration','target']
+    incols = ['orig_filename','uid','subject_number','session_number','start','duration','target']
     if args.cli:
-        input_data  = PD.DataFrame([[args.uid,args.dataset,args.start,args.duration,args.target]],columns=incols)
+        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,args.start,args.duration,args.target]],columns=incols)
     elif args.annotations:
-        input_data  = PD.DataFrame([[args.uid,args.dataset,-1,-1,args.target]],columns=incols)
+        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,-1,-1,args.target]],columns=incols)
     
     # Use input file if provided. Cleanup if missing columns
     if args.inputs_file != None:
@@ -91,9 +80,6 @@ if __name__ == '__main__':
             input_data[icol] = PD.to_numeric(input_data[icol],downcast='float')
         except ValueError:
             pass
-
-    # Get the proposed subnums
-    input_data = get_proposal_subnums(args,input_data)
 
     # If iEEG.org, pass inputs to that handler to get the data
     if args.ieeg:
