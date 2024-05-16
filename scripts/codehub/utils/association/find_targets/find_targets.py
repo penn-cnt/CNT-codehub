@@ -19,13 +19,7 @@ def return_tokens(istr):
     filtered_tokens = [token for token in tokens if token not in stop_words and len(token) > 1]
     return filtered_tokens
 
-if __name__ == '__main__':
-
-    # Argument parsing
-    parser = argparse.ArgumentParser(description="iEEG to bids conversion tool.")
-    parser.add_argument("--rootdir", type=str, required=True, help="Root directory to search within for target data.")
-    parser.add_argument("--outfile", type=str, required=True, help="Path to save results to")
-    args = parser.parse_args()
+def make_tokendict(args):
 
     # Get all the target dictionaries
     target_files = []
@@ -53,6 +47,27 @@ if __name__ == '__main__':
             lookup_dict[itoken]['count'] += 1
             lookup_dict[itoken]['files'].append(ifile.replace('_targets.pickle','.edf'))
 
+if __name__ == '__main__':
+
+    # Argument parsing
+    parser = argparse.ArgumentParser(description="iEEG to bids conversion tool.")
+    parser.add_argument("--rootdir", type=str, required=True, help="Root directory to search within for target data.")
+    parser.add_argument("--outfile", type=str, required=True, help="Path to save results to")
+    parser.add_argument("--tokendict", type=str, default=None, help="Optional. Path to the token dictionary if already generated. Makes subsequent searches against large databases faster.")
+    args = parser.parse_args()
+
+    # If token dict provided, load that. Otherwise, make dict.
+    if args.tokendict != None:
+        if os.path.exists(args.tokendict):
+            lookup_dict = pickle.load(open(args.tokendict,"rb"))
+        else:
+            # Make and save the tokendict
+            print("Creating token dictionary. This may take awhile")
+            lookup_dict = make_tokendict(args)
+            pickle.dump(lookup_dict,open(args.tokendict,"wb"))
+    else:
+        lookup_dict = make_tokendict(args)
+    
     # Make a pretty lookup table for the user
     index         = np.array(list(lookup_dict.keys())).reshape((-1,1))
     counts        = np.array([lookup_dict[ikey]['count'] for ikey in lookup_dict.keys()]).reshape((-1,1))
