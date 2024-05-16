@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import pandas as PD
 from sys import exit
+from tqdm import tqdm
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 
@@ -29,14 +30,14 @@ if __name__ == '__main__':
     # Get all the target dictionaries
     target_files = []
     for dirpath, dirs, files in os.walk(args.rootdir):  
-        for filename in files:
+        for filename in tqdm(files,desc='Finding targets',total=len(files),leave=False):
             fname = os.path.join(dirpath,filename) 
             if fname.endswith('targets.pickle'): 
                 target_files.append(fname)
     
     # Loop through each file and read in the target information. Then tokenize and store to final search dictionary
     lookup_dict = {}
-    for ifile in target_files:
+    for ifile in tqdm(target_files, desc='Creating file tokens',total=len(target_files),leave=False):
         target_dict = pickle.load(open(ifile,"rb"))
         annot_str   = target_dict['annotation']
         target_str  = target_dict['target']
