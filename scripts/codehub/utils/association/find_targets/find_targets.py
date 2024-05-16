@@ -24,7 +24,7 @@ def make_tokendict(args):
     # Get all the target dictionaries
     target_files = []
     for dirpath, dirs, files in os.walk(args.rootdir):  
-        for filename in tqdm(files,desc='Finding targets',total=len(files),leave=False):
+        for filename in files:
             fname = os.path.join(dirpath,filename) 
             if fname.endswith('targets.pickle'): 
                 target_files.append(fname)
@@ -46,6 +46,7 @@ def make_tokendict(args):
                 lookup_dict[itoken]['files'] = []
             lookup_dict[itoken]['count'] += 1
             lookup_dict[itoken]['files'].append(ifile.replace('_targets.pickle','.edf'))
+    return lookup_dict
 
 if __name__ == '__main__':
 
