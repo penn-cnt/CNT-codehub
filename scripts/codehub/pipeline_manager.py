@@ -390,11 +390,10 @@ if __name__ == "__main__":
 
         # Calculate the size of each subset based on the number of processes
         subset_size  = input_parameters.shape[0] // args.ncpu
-        #list_subsets = [input_parameters[i:i + subset_size] for i in range(0, input_parameters.shape[0], subset_size)]
         list_subsets = [input_parameters[i:i + subset_size] for i in range(0, subset_size*args.ncpu, subset_size)]
 
         # Handle leftovers
-        remainder = file_indices[args.ncpu*subset_size:]
+        remainder = list_subsets[args.ncpu*subset_size:]
         for idx,ival in enumerate(remainder):
             list_subsets[idx] = np.concatenate((list_subsets[idx],np.array([ival])))
 
