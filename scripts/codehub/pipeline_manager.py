@@ -275,8 +275,9 @@ def argument_handler(argument_dir='./',require_flag=True):
     args = parser.parse_args()
 
     # Make sure the output directory has a trailing /
-    if args.outdir[-1] != '/':
-        args.outdir += '/'
+    if require_flag:
+        if args.outdir[-1] != '/':
+            args.outdir += '/'
 
     # Help info if needed to be passed back as an object and not string
     help_info    = {}

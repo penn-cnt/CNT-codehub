@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Check for data in the CNT cache.")
     parser.add_argument("--username", required=True, help="Username on the host system.")
     parser.add_argument("--host", default="borel.seas.upenn.edu", help="Host system for the data cache.")
-    parser.add_argument("--path", default='/mnt/leif/littlab/cache/Human_Data/UPDATED_BIDS/subject_map.csv', help="Path to the database file with cache info.")
+    parser.add_argument("--path", default='/mnt/leif/littlab/cache/Human_Data/BIDS/subject_map.csv', help="Path to the database file with cache info.")
     args = parser.parse_args()
 
     # Get the host password
