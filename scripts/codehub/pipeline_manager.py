@@ -88,13 +88,15 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         data_viability.__init__(self)
 
         # Consolidate the metadata for failed chunks and successful chunks, and squeeze the successful object to match output list
+        metadata_copy = self.metadata.copy()
         bad_metadata_keys = np.setdiff1d(list(self.metadata.keys()),self.output_meta)
         if bad_metadata_keys.size > 0:
             bad_metadata = self.metadata[bad_metadata_keys]
         else:
             bad_metadata = {}
+        self.metadata = {}
         for idx,ikey in enumerate(self.output_meta):
-            self.metadata[idx] = self.metadata.pop(ikey)
+            self.metadata[idx] = metadata_copy.pop(ikey)
 
         # Pass to feature selection managers
         self.feature_manager()
