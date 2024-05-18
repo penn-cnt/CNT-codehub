@@ -46,7 +46,7 @@ class data_viability:
             metadata_handler.update_metadata(self,viable_meta)
 
             print(f"Length of outputs: {len(self.output_list)}")
-            print(f"Number of good entries: {flags.sum()}")
+            print(f"Number of good entries: {np.sum(flags)}")
             print(f"New length of output list {len(self.output_list)}")
             print(f"Number of metadata keys {len(list(self.metadata.keys()))}")
             print(f"Max metadata key {max(list(self.metadata.keys()))}")
