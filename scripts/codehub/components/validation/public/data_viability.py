@@ -26,6 +26,8 @@ class data_viability:
         # Find minimum viable datasets
         if self.args.viability == "VIABLE_DATA":
 
+            print(f"Length of output list {len(self.output_list)}")
+
             # Loop over each dataset and find the ones that have no NaNs
             flags = []
             for idx,data_array in enumerate(self.output_list):
@@ -42,6 +44,12 @@ class data_viability:
             # Copying results. Kept as two variables for possible disambiguation later.
             self.output_list = viable_data.copy()
             metadata_handler.update_metadata(self,viable_meta)
+
+            print(f"Length of outputs: {len(self.output_list)}")
+            print(f"Number of good entries: {flags.sum()}")
+            print(f"New length of output list {len(self.output_list)}")
+            print(f"Number of metadata keys {len(list(self.metadata.keys()))}")
+            print(f"Max metadata key {max(list(self.metadata.keys()))}")
 
         elif self.args.viability == 'VIABLE_COLUMNS':
             
