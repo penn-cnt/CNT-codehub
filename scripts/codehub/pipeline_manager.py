@@ -88,6 +88,7 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         data_viability.__init__(self)
 
         # Consolidate the metadata for failed chunks and successful chunks, and squeeze the successful object to match output list
+        ### There is an ocassional bug in how keys get handled. For now, blocking this code out and recommending people do not use data viability.
         """
         metadata_copy = self.metadata.copy()
         bad_metadata_keys = np.setdiff1d(list(self.metadata.keys()),self.output_meta)
@@ -251,7 +252,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     orientation_group.add_argument("--orientation", type=str,  choices=list(allowed_majoraxis_args.keys()), default="column", help=f"R|Choose an option:\n{allowed_majoraxis_help}")
 
     viability_group = parser.add_argument_group('Data viability Options')
-    viability_group.add_argument("--viability", type=str,  choices=list(allowed_viability_args.keys()), default="VIABLE_DATA", help=f"R|Choose an option:\n{allowed_viability_help}")
+    viability_group.add_argument("--viability", type=str,  choices=list(allowed_viability_args.keys()), default="None", help=f"R|Choose an option:\n{allowed_viability_help}")
     viability_group.add_argument("--interp", action='store_true', default=False, help="Interpolate over NaN values of sequence length equal to n_interp.")
     viability_group.add_argument("--n_interp", type=int,  default=1, help="Number of contiguous NaN values that can be interpolated over should the interp option be used.")
 

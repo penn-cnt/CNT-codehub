@@ -25,7 +25,7 @@ if __name__ == '__main__':
         
         # Object columns
         if args.col_config == None:
-            drop_cols = ['file', 't_end', 'method']
+            drop_cols = ['file', 't_end','method']
             obj_cols  = ['t_start', 'dt', 'uid']
             map_cols  = ['tag','target','annotation']
         else:
