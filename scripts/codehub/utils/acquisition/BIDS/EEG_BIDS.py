@@ -39,6 +39,7 @@ if __name__ == '__main__':
     bids_group.add_argument("--bidsroot", type=str, required=True, help="Bids Root Directory.")
     bids_group.add_argument("--session", type=str, required=True, help="Base string session keyword for BIDS. (i.e. 'preimplant')")
     bids_group.add_argument("--session_num", type=int, default=-1, help="Session number for this file.")
+    bids_group.add_argument("--run_num", type=int, default=-1, help="Run number for this file.")
 
     other_group = parser.add_argument_group('Other options')
     other_group.add_argument("--inputs_file", type=str, help="Optional file of input datasets to (download and) turn into BIDS.")
@@ -61,11 +62,11 @@ if __name__ == '__main__':
         args.bidsroot += '/'
 
     # Input data array generation
-    incols = ['orig_filename','uid','subject_number','session_number','start','duration','target']
+    incols = ['orig_filename','uid','subject_number','session_number','run_number','start','duration','target']
     if args.cli:
-        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,args.start,args.duration,args.target]],columns=incols)
+        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,args.run_num,args.start,args.duration,args.target]],columns=incols)
     elif args.annotations:
-        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,-1,-1,args.target]],columns=incols)
+        input_data  = PD.DataFrame([[args.dataset,args.uid,args.subnum,args.session_num,args.run_num,-1,-1,args.target]],columns=incols)
     
     # Use input file if provided. Cleanup if missing columns
     if args.inputs_file != None:
