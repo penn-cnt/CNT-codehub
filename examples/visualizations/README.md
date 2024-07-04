@@ -2,31 +2,41 @@
 
 ## EDF Viewer
 
-We provide a light-weight means of visualizing EDF data in a Python environment. An example instantiation of the code is as follows:
+We provide a light-weight means of visualizing EDF data in a Python environment. This viewer uses the EPIPY as a backend to perform a number of important data clean up steps before visualiztion (at minimum it cleans channel labels, but can also montage or preprocess the data).
 
+A few sample instantiations are provided below. Please consult the `--help` flag for more detailed information on different inputs to the viewer as these are just a few common uses.
+
+(**Note:** We also provide the available keyboard shortcuts for a number of useful viewing situations at the top of the plot.)
+
+### Random start time via seed (default behavior) with for all wildcard data matches
 ```
-utils/visualization/edf_viewer.py --file ../../user_data/BIDS/BIDS/sub-0014/ses-preimplant04/eeg/sub-0014_ses-preimplant04_task-task_run-06_eeg.edf --sleep_wake_power ../../user_data/derivative/sleep_state/timeseries_association/reference.pickle
+python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging
 ```
-where:
-- file: Is the edf file to be read in
-- sleep_wake_power: Optional flag that tags timeseries data.
-    - The viewer allows tagging of timeseries data points to draw attention to areas of interest. This flag reads in sleep/wake annotated data. 
 
-### Example Views
-The default view for an EDF file following channel name cleanup and montaging might look like the following:
-![default_setting](images/edf_viewer_00.png)
+### Random start time via seed (default behavior) with for all wildcard data matches with a common average montage (default=bipolar)
+```
+python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging --montage common_average
+```
 
-In this next example, by using the `t` button, we can highlight timepoints that might be of interest. In this case, we have data of interest in a sleep/wake study.
-![first_target](images/edf_viewer_01.png)
+### Random start time via seed (default behavior) with flagging for all wildcard data matches
+```
+python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging
+```
+flagging enables an interactive mode where the user can denote if certain events occur within the observed time window and save the results to a csv file.
 
-If we press t again, we can go to another series of timepoints of interest. We can also have multiple categories of interesting points, which results in different highlighting colors.
-![second_target](images/edf_viewer_02.png)
+By default the code outputs to `./edf_viewer_flags.csv` but can be changed using the `--outfile` option at runtime.
 
-If we wish to zoom in on the data, we can left click to define an area of interest:
-![zoom_window](images/edf_viewer_03.png)
+### Set start time of t=0 with flagging for wildcard datamatches
+```
+python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging --t0 0
+```
 
-And by pressing `z` we can zoom in on that region (and reset the zoom by pressing `r`):
-![zoom](images/edf_viewer_04.png)
+### Set start time of t=0 and duration 15 with flagging for wildcard datamatches
+```
+python utils/visualization/edf_viewer/edf_viewer.py --wildcard "../../../scalp_deep-learning/user_data/BIDS/BIDS/sub-0008/ses-preimplant01/eeg/sub-0008_ses-preimplant01_task-task_run-*_eeg.edf" --username bjprager --flagging --t0 0 --dur 15
+```
 
-Finally, if we wish to look at just one channel closely, we can hover over the timeseries and press `e` to get a full plot zoom in:
-![single_view](images/edf_viewer_05.png)
+### Load a single edf file into the viewer
+```
+python utils/visualization/edf_viewer/edf_viewer.py --cli ../../user_data/EDF/sub-00149_ses-preimplant002_task-task_run-06_eeg.edf 
+```

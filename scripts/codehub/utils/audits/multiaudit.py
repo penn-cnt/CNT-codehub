@@ -114,7 +114,8 @@ class audit:
                 self.input_paths.append(str(ifolder))
                 self.output_names.append(f"{raw_output[ii]:09}.audit")
             else:
-                print(f"Skipping {ifolder}.")
+                #print(f"Skipping {ifolder}.")
+                pass
         self.input_paths.append(str(self.rootdir))
         self.output_names.append(f"{len(self.folders):09}.audit")
 
@@ -241,7 +242,7 @@ class audit:
         start_time = time.time()
 
         # Loop over the folders to audit
-        for idx,ifolder in tqdm(enumerate(inpaths), desc='Audit: ', total=len(inpaths), position=worker_number, disable=False):
+        for idx,ifolder in tqdm(enumerate(inpaths), desc='Audit: ', total=len(inpaths), position=worker_number, disable=False, leave=False):
 
             # Save the input string to a different name in case of modifications
             instr = ifolder
@@ -254,17 +255,20 @@ class audit:
             cmd = cmd.replace("OUTDIR_SUBSTR",self.outname)
 
             # Run command
-            subprocess.run(cmd, shell=True, check=True)
+            try:
+                subprocess.run(cmd, shell=True, timeout=2*60)
 
-            # Update audit history
-            output.append([ifolder,datetime.now().timestamp()])
+                # Update audit history
+                output.append([ifolder,datetime.now().timestamp()])
+            except:
+                pass
 
             # Update the audit history ocassionally to speed up subsequent loads
             current_time = time.time()
             dt           = (current_time-start_time)
             stagger_time = 60+5*worker_number 
             
-            if dt > stagger_time:
+            if dt > stagger_time and len(output)>0:
 
                 with semaphore:
 
@@ -281,7 +285,6 @@ class audit:
                     output     = []                        
 
         return_dict[worker_number] = np.array(output)
-        barrier.wait()
 
 if __name__ == '__main__':
     
@@ -308,5 +311,6 @@ if __name__ == '__main__':
     AH.define_inputs()
     AH.audit_handler(args.os,args.ncpu)
     if args.merge:
+        print(f"Merging data. This may take awhile.")
         AH.clean_audit()
     

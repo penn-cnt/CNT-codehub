@@ -52,7 +52,7 @@ from configs.makeconfigs import *
 
 class data_manager(project_handlers, metadata_handler, data_loader, channel_mapping, dataframe_manager, channel_clean, channel_montage, output_manager, data_viability, target_loader):
 
-    def __init__(self, input_params, args, worker_number, barrier):
+    def __init__(self, input_params, args, timestamp, worker_number, barrier):
         """
         Initialize parent class for data loading.
         Store pathing for different data type loads.
@@ -68,6 +68,7 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         self.args          = args
         self.unique_id     = uuid.uuid4()
         self.bar_frmt      = '{l_bar}{bar}| {n_fmt}/{total_fmt}|'
+        self.timestamp     = timestamp
         self.worker_number = worker_number
         self.barrier       = barrier
 
@@ -87,20 +88,6 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         # Select valid data slices
         data_viability.__init__(self)
 
-        # Consolidate the metadata for failed chunks and successful chunks, and squeeze the successful object to match output list
-        ### There is an ocassional bug in how keys get handled. For now, blocking this code out and recommending people do not use data viability.
-        """
-        metadata_copy = self.metadata.copy()
-        bad_metadata_keys = np.setdiff1d(list(self.metadata.keys()),self.output_meta)
-        if bad_metadata_keys.size > 0:
-            bad_metadata = self.metadata[bad_metadata_keys]
-        else:
-            bad_metadata = {}
-        self.metadata = {}
-        for idx,ikey in enumerate(self.output_meta):
-            self.metadata[idx] = metadata_copy.pop(ikey)
-        """
-
         # Pass to feature selection managers
         self.feature_manager()
 
@@ -113,7 +100,7 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
             # Save the results
             output_manager.save_features(self)
 
-            if not self.args.skip_clean_save:
+            if self.args.clean_save:
                 output_manager.save_output_list(self)
 
     def feature_manager(self):
@@ -191,12 +178,83 @@ def parse_list(input_str):
     values = input_str.replace(',', ' ').split()
     return [int(value) for value in values]
 
-def start_analysis(data_chunk,args,worker_id,barrier):
+def start_analysis(data_chunk,args,timestamp,worker_id,barrier):
     """
     Helper function to allow for easy multiprocessing initialization.
     """
 
-    DM = data_manager(data_chunk,args,worker_id,barrier)
+    DM = data_manager(data_chunk,args,timestamp,worker_id,barrier)
+
+def merge_outputs(args,timestamp):
+    """
+    If requested, automatically merge outputs to just one file.
+    """
+
+    # Find the various filepaths
+    metadata_files   = np.sort(glob.glob(f"{args.outdir}/{timestamp}*meta.pickle"))
+    feature_files    = np.sort(glob.glob(f"{args.outdir}/{timestamp}*features.pickle"))
+    featurecmd_files = np.sort(glob.glob(f"{args.outdir}/{timestamp}*fconfigs.pickle"))
+    data_list        = np.sort(glob.glob(f"{args.outdir}/{timestamp}*data.pickle"))
+
+    # Make a merged downcasted feature file
+    if len(feature_files) > 0:
+        for idx,ifile in enumerate(feature_files):
+            
+            # Read in the dataframe
+            iDF = PD.read_pickle(ifile)
+            
+            # Attempt downcasting as much as possible
+            for icol in iDF.columns:
+                itype = iDF[icol].dtype
+                try:
+                    iDF[icol] = PD.to_numeric(iDF[icol],downcast='integer')
+                    if iDF[icol].dtype == itype:
+                        iDF[icol] = PD.to_numeric(iDF[icol],downcast='float')
+                except ValueError:
+                    pass
+
+            # Merge the outputs to one final file
+            if idx == 0:
+                output_DF = iDF.copy()
+            else:
+                output_DF = PD.concat((output_DF,iDF))
+        
+        # Make the new output and only remove files once things were confirmed to work
+        output_DF.to_pickle(f"{args.outdir}/{timestamp}_features.pickle")
+        for ifile in feature_files:os.remove(ifile)
+
+    # Clean up the feature config files (if present)
+    if len(featurecmd_files) > 0:
+        os.system(f"cp {featurecmd_files[0]} {args.outdir}/{timestamp}_fconfigs.pickle")
+        for ifile in featurecmd_files:os.remove(ifile)
+        
+    # Clean up the meta files as needed
+    if len(metadata_files) > 0:
+        for idx,ifile in enumerate(metadata_files):
+            imeta = pickle.load(open(ifile,"rb"))
+            if idx == 0:
+                metadata = imeta.copy()
+            else:
+                masterkeys = list(metadata.keys())
+                newkeys    = list(imeta.keys())
+                offset     = max(masterkeys)+1
+                for ikey in newkeys:
+                    imeta[ikey+offset] = imeta.pop(ikey)
+                metadata = {**metadata,**imeta}
+        pickle.dump(metadata,open(f"{args.outdir}/{timestamp}_meta.pickle","wb"))
+        for ifile in metadata_files:os.remove(ifile)
+
+    # Clean up the raw data files as needed
+    if len(data_list) > 0:
+        for idx,ifile in enumerate(data_list):
+            idata = pickle.load(open(ifile,"rb"))
+            if idx == 0:
+                data = idata.copy()
+            else:
+                data.extend(idata)
+        pickle.dump(data,open(f"{args.outdir}/{timestamp}_data.pickle","wb"))
+        for ifile in data_list:os.remove(ifile)
+
 
 def argument_handler(argument_dir='./',require_flag=True):
 
@@ -271,12 +329,13 @@ def argument_handler(argument_dir='./',require_flag=True):
     output_group.add_argument("--outdir", type=str,  required=require_flag, help="Output directory.") 
     output_group.add_argument("--exclude", type=str,  help="Exclude file. If any of the requested data is bad, the path and error gets dumped here. \
                               Also allows for skipping on subsequent loads. Default=outdir+excluded.txt (In Dev. Just gets initial load fails.)") 
+    output_group.add_argument("--nomerge", action='store_true', default=False, help="Do not merge the outputs from multiprocessing into one final set of files.")
+    output_group.add_argument("--clean_save", action='store_true', default=False, help="Save cleaned up raw data. Mostly useful if you need time series and not just features.")
 
     misc_group = parser.add_argument_group('Misc Options')
     misc_group.add_argument("--input_str", type=str, help="Optional. If glob input, wildcard path. If csv/manual, filepath to input csv/raw data.")
     misc_group.add_argument("--silent", action='store_true', default=False, help="Silent mode.")
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug mode. If set, does not save results. Useful for testing code.")
-    misc_group.add_argument("--skip_clean_save", action='store_true', default=False, help="Do not save cleaned up raw data. Mostly useful if you just want features.")
     args = parser.parse_args()
 
     # Make sure the output directory has a trailing /
@@ -408,7 +467,7 @@ if __name__ == "__main__":
         # Create processes and start workers
         processes = []
         for worker_id, data_chunk in enumerate(list_subsets):
-            process = multiprocessing.Process(target=start_analysis, args=(data_chunk,args,worker_id,barrier))
+            process = multiprocessing.Process(target=start_analysis, args=(data_chunk,args,timestamp,worker_id,barrier))
             processes.append(process)
             process.start()
         
@@ -417,7 +476,11 @@ if __name__ == "__main__":
             process.join()
     else:
         # Run a non parallel version.
-        start_analysis(input_parameters, args, 0, None)
+        start_analysis(input_parameters, args, timestamp, 0, None)
     
+    # Perform merge if requested
+    if not args.nomerge:
+        merge_outputs(args,timestamp)
+
     # Final clean up of the terminal
-    os.system("clear")
+    #os.system("clear")

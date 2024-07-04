@@ -6,6 +6,7 @@ rnd.seed(42)
 import re
 import sys
 import glob
+import pickle
 import argparse
 from os import path
 
@@ -31,7 +32,7 @@ class data_handler:
     def __init__(self):
         pass
 
-    def data_prep(self):
+    def data_prep(self, chcln, chmap, montage):
 
         # Create pointers to the relevant classes
         DL    = data_loader()
@@ -47,16 +48,19 @@ class data_handler:
             self.fs    = self.fs[0]
 
         # Get the cleaned channel names
-        clean_channels = CHCLN.direct_inputs(DF.columns)
+        clean_channels = CHCLN.direct_inputs(DF.columns,clean_method=chcln)
         channel_dict   = dict(zip(DF.columns,clean_channels))
         DF.rename(columns=channel_dict,inplace=True)
 
         # Get the channel mapping
-        channel_map = CHMAP.direct_inputs(DF.columns,"HUP1020")
+        channel_map = CHMAP.direct_inputs(DF.columns,chmap)
         DF          = DF[channel_map]
 
         # Get the montage
-        self.DF = CHMON.direct_inputs(DF,"HUP1020")
+        if montage != None:
+            self.DF = CHMON.direct_inputs(DF,montage)
+        else:
+            self.DF = DF
 
         # Read in optional sleep wake power data if provided
         if self.args.sleep_wake_power != None:
@@ -128,7 +132,7 @@ class data_viewer(data_handler):
         self.drawn_a = []
 
         # Prepare the data
-        data_handler.data_prep(self)
+        data_handler.data_prep(self, args.chcln, args.chmap, args.montage)
 
         # Get the duration
         self.t_max = self.DF.shape[0]/self.fs
@@ -395,7 +399,7 @@ class data_viewer(data_handler):
         counter+=1
         if counter == 4 and counter_name != 'artifact_counter':
             counter = 0
-        elif counter == 3 and counter_name == 'artifact_counter':
+        elif counter == 2 and counter_name == 'artifact_counter':
             counter = 0
 
         # Update the substring
@@ -415,7 +419,7 @@ class data_viewer(data_handler):
 
         # Create output column list
         xlims   = self.ax_dict[self.refkey2].get_xlim()
-        outcols = ['filename','username','assigned_t0','assigned_t1','evaluated_t0','evaluated_t1','sleep_state','spike_state','seizure_state','focal_slowing','general_slowing']
+        outcols = ['filename','username','assigned_t0','assigned_t1','evaluated_t0','evaluated_t1','sleep_state','spike_state','seizure_state','focal_slowing','general_slowing','artifacts']
         outvals = [self.infile,self.args.username,self.xlim_orig[0],self.xlim_orig[1],xlims[0],xlims[1]]
         outvals = outvals+self.flagged_out
 
@@ -431,6 +435,7 @@ class data_viewer(data_handler):
 
         # Save the results
         if not self.args.debug:
+            out_DF = out_DF.drop_duplicates()
             out_DF.to_csv(self.args.outfile,index=False)
 
     ################################
@@ -626,16 +631,6 @@ def make_help_str(idict):
 
 if __name__ == '__main__':
 
-    # Argument option creation
-    allowed_channel_args    = {'HUP1020': "Channels associated with a 10-20 montage performed at HUP.",
-                               'RAW': "Use all possible channels. Warning, channels may not match across different datasets."}
-    allowed_montage_args    = {'HUP1020': "Use a 10-20 montage.",
-                               'COMMON_AVERAGE': "Use a common average montage."}
-    
-    # Pretty argument string creation
-    allowed_channel_help   = make_help_str(allowed_channel_args)
-    allowed_montage_help   = make_help_str(allowed_montage_args)
-
     # Command line options needed to obtain data.
     parser = argparse.ArgumentParser(description="Simplified data merging tool.", formatter_class=CustomFormatter)
 
@@ -645,11 +640,13 @@ if __name__ == '__main__':
     input_group.add_argument("--file", type=str, help="Filepath to txt or csv of input files.")
 
     output_group = parser.add_argument_group('Output options')
-    output_group.add_argument("--outfile", type=str, help="Output filepath if predicting sleep/spikes/etc.")
+    output_group.add_argument("--outfile", default='./edf_viewer_flags.csv', type=str, help="Output filepath if predicting sleep/spikes/etc.")
     output_group.add_argument("--username", type=str, help="Username to tag any outputs with.")
 
     prep_group = parser.add_argument_group('Data preparation options')
-    prep_group.add_argument("--channel_list", choices=list(allowed_channel_args.keys()), default="HUP1020", help=f"R|Choose an option:\n{allowed_channel_help}")
+    prep_group.add_argument("--chcln", type=str, default="hup", help="Channel cleaning option")
+    prep_group.add_argument("--chmap", type=str, default="hup1020", help="Channel mapping option")
+    prep_group.add_argument("--montage", type=str, default="hup1020", help="Channel montage option")
 
     time_group = parser.add_mutually_exclusive_group()
     time_group.add_argument("--t0", type=float, help="Start time to plot from in seconds.")
@@ -668,7 +665,11 @@ if __name__ == '__main__':
     misc_group.add_argument("--sleep_wake_power", type=str, help="Optional file with identified groups in alpha/delta for sleep/wake patients")
     misc_group.add_argument("--pickle_load", action='store_true', default=False, help="Load from pickled tuple of dataframe,fs.")
     misc_group.add_argument("--flagging", action='store_true', default=False, help="Let user flag EEG for important properties.")
+    misc_group.add_argument("--review_mode", action='store_true', default=False, help="Allows us to prevent reviewers from seeing data they have already reviewed.")
     args = parser.parse_args()
+
+    # Clean up some argument types
+    args.montage = None if args.montage == 'None' else args.montage
 
     # Get username and output path if needed
     if args.flagging:
@@ -709,7 +710,8 @@ if __name__ == '__main__':
         
         # Check if this user has already reviewed this data
         iDF = ref_DF.loc[(ref_DF.username==args.username)&(ref_DF.filename==ifile)]
-        if iDF.shape[0] == 0:
+        if iDF.shape[0] == 0 or args.review_mode == False:
+
             try:
                 DV                = data_viewer(ifile,args,tight_layout_dict,filetype)
                 tight_layout_dict = DV.montage_plot()
@@ -718,4 +720,3 @@ if __name__ == '__main__':
                 print("Unable to load data. This is likely due to formatting issues in an EDF header.")
                 print(f"A detail error is as follows: {e}")
                 PLT.close("all")
-

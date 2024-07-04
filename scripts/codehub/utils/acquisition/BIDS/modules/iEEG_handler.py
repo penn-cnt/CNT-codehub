@@ -348,6 +348,7 @@ class ieeg_handler:
                 IEEG.download_by_annotation(iid,ifile,target,self.proposed_sub[file_idx],self.proposed_ses[file_idx],self.proposed_run[file_idx])
                 IEEG = iEEG_download(self.args,semaphore)
             else:
+                print(f"Working on {ifile}.")
                 IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],self.proposed_ses[file_idx],self.proposed_run[file_idx],file_idx)
 
 

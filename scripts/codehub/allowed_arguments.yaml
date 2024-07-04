@@ -49,8 +49,8 @@ allowed_input_args:
     MANUAL: Manually enter filepaths.
     GLOB: Use Python glob to select all files that follow a user inputted pattern.
 allowed_viability_args:
-    VIABLE_DATA: Drop datasets that contain a NaN column. (default)
-    VIABLE_COLUMNS: Use the minimum cross section of columns across all datasets that contain no NaNs.
+    #VIABLE_DATA: Drop datasets that contain a NaN column. (default)
+    #VIABLE_COLUMNS: Use the minimum cross section of columns across all datasets that contain no NaNs.
     None: Do not remove data with NaNs.
 allowed_majoraxis_args:
     column: Default. Raw data is in [samples,channel] (i.e. Columnar) format.

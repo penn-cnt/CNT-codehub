@@ -328,11 +328,16 @@ class preprocessing_utils:
         
 class preprocessing:
     """
-    This class invokes the various preprocessing steps
+    This class invokes the various preprocessing steps. This should not be altered without good reason.
 
-    New preprocessing tasks should go into other classes in this script.
+    New preprocessing tasks should go into other classes in this script. Functions should return the new vector array for each channel/montage channel to be propagated forward.
 
-    Functions should return the new vector array for each channel/montage channel to be propagated forward.
+    If you need a vector returned, or need to avoid repeated calculations across different features, you can use the persistance_dict object
+    and return the required elements across different feature calls.The MNE class has examples of how to use this object. You can alo look at components.features.public.features.py:FOOOF_processing
+    for another use case.
+
+    As of 06/10/24, the default behavior is to pass a class a vector with the channel data and the sampling frequency. This behavior can be altered
+    at the `CLASS INITIALIZATION` code block. 
     """
     
     def __init__(self,dataset,fs):
@@ -368,6 +373,10 @@ class preprocessing:
             # Search the available classes for the user requested method
             for cls in classes:
                 if hasattr(cls,method_name):
+
+                    #################################
+                    ###### CLASS INITILIZATION ######
+                    #################################
                     if cls.__name__ not in ['preprocessing_utils','mne_processing']:
 
                         # Loop over the channels and get the updated values

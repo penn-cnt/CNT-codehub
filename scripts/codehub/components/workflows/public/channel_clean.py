@@ -108,4 +108,5 @@ class channel_clean:
         TODO: This is essentially just a 'pass'. Neurovista cleaning logic will be added in the future.  
         """
 
-        self.clean_channel_map = self.metadata[self.file_cntr]['channels']
+        #self.clean_channel_map = self.metadata[self.file_cntr]['channels']
+        pass

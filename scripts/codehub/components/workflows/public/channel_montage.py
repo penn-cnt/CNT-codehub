@@ -103,14 +103,16 @@ class channel_montage:
         """
 
         # Get the averages across all channels per time slice
-        averages = np.average(self.dataframe_to_montage.values(axis=0))
-        averages = np.tile(averages, (1, self.ncol))
+        averages = np.average(self.dataframe_to_montage.values,axis=0).reshape((-1,1))
 
         # Get the montage data
-        montage_data = self.dataframe_to_montage.values-averages
+        montage_df = self.dataframe_to_montage.copy()
+        for idx,icol in enumerate(self.dataframe_to_montage.columns):
+            montage_df[icol] = self.dataframe_to_montage[icol]-averages[idx]
+        montage_data = montage_df.values
 
         # Get the montage labels
-        self.montage_channels = [f"{ichannel}-com_avg" for ichannel in self.dataframe_to_montage.columns]
+        self.montage_channels = [f"{ichannel}-car" for ichannel in self.dataframe_to_montage.columns]
 
         # Make the montage dataframe
         return montage_data

@@ -112,7 +112,7 @@ class BIDS_handler:
         self.data_info = mne.create_info(ch_names=list(self.channels), sfreq=self.fs, verbose=False)
 
     def add_raw(self):
-        self.raws.append(mne.io.RawArray(self.data.T, self.data_info, verbose=False))
+        self.raws.append(mne.io.RawArray(1e-6*self.data.T, self.data_info, verbose=False))
 
     def event_mapper(self):
 
@@ -141,8 +141,8 @@ class BIDS_handler:
             write_raw_bids(bids_path=self.bids_path, raw=raw, events_data=events,event_id=self.event_mapping, allow_preload=True, format='EDF',verbose=False)
 
             # Overwrite the edf file only with set physical maxima/minima
-            pmin    = int(raw.get_data().min())
-            pmax    = int(raw.get_data().max())
+            pmax = int(self.data.max())
+            pmin = -pmax
             mne.export.export_raw(str(self.bids_path),raw,physical_range=(pmin,pmax),overwrite=True,verbose=False)
 
             # Save the targets with the edf path paired up to filetype
@@ -178,13 +178,15 @@ class BIDS_handler:
         data[np.isnan(data)] = 0
         raw._data = data
 
+        # Ensure we have an output directory to write to
+        rootdir = '/'.join(str(self.bids_path).split('/')[:-1])
+        if not path.exists(rootdir):
+            os.system(f"mkdir -p {rootdir}")
+
         # Write the bids file
-        try:
-            write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False,overwrite=True)
-        except:
-            pmin    = int(raw.get_data().min())
-            pmax    = int(raw.get_data().max())
-            mne.export.export_raw(str(self.bids_path),raw,physical_range=(pmin,pmax),overwrite=True,verbose=False)
+        pmax = int(data.max())
+        pmin = -pmax
+        mne.export.export_raw(str(self.bids_path)+'.edf',raw,physical_range=(pmin,pmax),overwrite=True,verbose=False,fmt='edf')
         
         # Save the targets with the edf path paired up to filetype
         target_path = str(self.bids_path.copy()).rstrip('.edf')+'_targets.pickle'

@@ -28,3 +28,18 @@ def test_input_data(args,files,start_times,end_times):
         if not args.debug:
             excluded_df.to_csv(exclude_path,index=False)
     return files[good_index],start_times[good_index],end_times[good_index]
+
+
+        # Consolidate the metadata for failed chunks and successful chunks, and squeeze the successful object to match output list
+        ### There is an ocassional bug in how keys get handled. For now, blocking this code out and recommending people do not use data viability.
+        """
+        metadata_copy = self.metadata.copy()
+        bad_metadata_keys = np.setdiff1d(list(self.metadata.keys()),self.output_meta)
+        if bad_metadata_keys.size > 0:
+            bad_metadata = self.metadata[bad_metadata_keys]
+        else:
+            bad_metadata = {}
+        self.metadata = {}
+        for idx,ikey in enumerate(self.output_meta):
+            self.metadata[idx] = metadata_copy.pop(ikey)
+        """
