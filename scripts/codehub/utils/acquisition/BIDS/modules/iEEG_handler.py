@@ -23,6 +23,10 @@ class TimeoutException(Exception):
     pass
 
 class Timeout:
+    """
+    Manage timeouts to the iEEG.org API call. It can go stale, and sit for long periods of time otherwise.
+    """
+
     def __init__(self, seconds=1, multiflag=False, error_message='Function call timed out'):
         self.seconds       = seconds
         self.error_message = error_message
@@ -45,6 +49,13 @@ class Timeout:
             pass
 
 class iEEG_download(BIDS_handler):
+    """
+    Manages the actual downloads from iEEG.org. It then calls the BIDS handler to save the data.
+    If using the annotation method, it will loop over each clip layer in this class.
+
+    Args:
+        BIDS_handler (_type_): _description_
+    """
 
     def __init__(self, args, semaphore):
         
@@ -71,11 +82,19 @@ class iEEG_download(BIDS_handler):
             self.processed_start    = []
 
     def reset_variables(self):
-            # Delete all variables in the object's namespace
-            for var_name in list(self.__dict__.keys()):
-                delattr(self, var_name)
+        """
+        Sometimes MNE bids needs to be reset. Use with caution.
+        """            
+
+        # Delete all variables in the object's namespace
+        for var_name in list(self.__dict__.keys()):
+            delattr(self, var_name)
 
     def get_annotations(self):
+        """
+        Query the annotation layer from iEEG.org and get the formatted start times and durations.
+        The most important outputs are self.clip_start_times and self.clip_durations.
+        """
 
         # Get the clip times
         self.session_method_handler(0,1e6,annotation_flag=True)
@@ -116,6 +135,20 @@ class iEEG_download(BIDS_handler):
                         self.annotation_flats.append(desc)
 
     def download_by_cli(self, uid, file, target, start, duration, proposed_sub, proposed_ses, proposed_run, file_idx):
+        """
+        Download a single chunk of data from iEEG.org
+
+        Args:
+            uid (_type_): _description_
+            file (_type_): _description_
+            target (_type_): _description_
+            start (_type_): _description_
+            duration (_type_): _description_
+            proposed_sub (_type_): _description_
+            proposed_ses (_type_): _description_
+            proposed_run (_type_): _description_
+            file_idx (_type_): _description_
+        """
 
         # Store the ieeg filename
         self.uid          = uid
@@ -145,6 +178,17 @@ class iEEG_download(BIDS_handler):
             pass
 
     def download_by_annotation(self, uid, file, target, proposed_sub, proposed_ses, proposed_run):
+        """
+        Download each annotation layer within a given file on iEEG.org.
+
+        Args:
+            uid (_type_): _description_
+            file (_type_): _description_
+            target (_type_): _description_
+            proposed_sub (_type_): _description_
+            proposed_ses (_type_): _description_
+            proposed_run (_type_): _description_
+        """
 
         # Store the ieeg filename
         self.uid          = uid

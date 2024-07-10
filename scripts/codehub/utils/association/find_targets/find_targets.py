@@ -84,6 +84,7 @@ if __name__ == '__main__':
     tokens = input("Enter the keyword (or comma separated keywords) you want the file list for? (Q/q quit). ")
     if tokens.lower() == 'q':exit()
     tokenlist = tokens.split(',')
+    for idx,itoken in enumerate(tokenlist):tokenlist[idx]=itoken.lower()
     
     # Save the files to the output file
     outfiles = []

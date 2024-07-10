@@ -121,6 +121,13 @@ class BIDS_handler:
         self.event_mapping = dict(zip(keys,vals))
 
     def annotation_save(self,idx,raw):
+        """
+        Save annotation layer data. This requires us to loop over runs and sessions, which can be inferred or provided. 
+
+        Args:
+            idx (_type_): _description_
+            raw (_type_): _description_
+        """
 
         # Make the events file and save the results
         try:
@@ -164,6 +171,13 @@ class BIDS_handler:
             self.create_lookup(idx)
 
     def direct_save(self,idx,raw):
+        """
+        Save a single data chunk from iEEG.org.
+
+        Args:
+            idx (_type_): _description_
+            raw (_type_): _description_
+        """
 
         # Save the edf in bids format
         if self.proposed_run == -1:

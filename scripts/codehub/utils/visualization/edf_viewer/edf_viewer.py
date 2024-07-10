@@ -53,8 +53,9 @@ class data_handler:
         DF.rename(columns=channel_dict,inplace=True)
 
         # Get the channel mapping
-        channel_map = CHMAP.direct_inputs(DF.columns,chmap)
-        DF          = DF[channel_map]
+        if chmap != None:
+            channel_map = CHMAP.direct_inputs(DF.columns,chmap)
+            DF          = DF[channel_map]
 
         # Get the montage
         if montage != None:
@@ -645,8 +646,8 @@ if __name__ == '__main__':
 
     prep_group = parser.add_argument_group('Data preparation options')
     prep_group.add_argument("--chcln", type=str, default="hup", help="Channel cleaning option")
-    prep_group.add_argument("--chmap", type=str, default="hup1020", help="Channel mapping option")
-    prep_group.add_argument("--montage", type=str, default="hup1020", help="Channel montage option")
+    prep_group.add_argument("--chmap", type=str, default="hup1020", help="Channel mapping option. 'None' to skip.")
+    prep_group.add_argument("--montage", type=str, default="hup1020", help="Channel montage option 'None' to skip.")
 
     time_group = parser.add_mutually_exclusive_group()
     time_group.add_argument("--t0", type=float, help="Start time to plot from in seconds.")
@@ -669,6 +670,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Clean up some argument types
+    args.chmap = None if args.chmap == 'None' else args.chmap
     args.montage = None if args.montage == 'None' else args.montage
 
     # Get username and output path if needed

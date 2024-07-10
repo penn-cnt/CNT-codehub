@@ -7,6 +7,11 @@ from sys import argv,exit
 
 
 if __name__ == '__main__':
+    """
+    Creates a merged output for the EPIPY feature dataframes.
+
+    DEPRECIATE: 07/08/24: New format from EPIPY makes this defunct.
+    """
 
     # Argument parsing
     parser = argparse.ArgumentParser(description="Simplified data merging tool.")
