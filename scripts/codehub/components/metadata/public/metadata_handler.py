@@ -26,8 +26,10 @@ class metadata_handler:
         self.metadata[self.file_cntr]['file']    = self.infile
         self.metadata[self.file_cntr]['t_start'] = self.t_start
         self.metadata[self.file_cntr]['t_end']   = self.t_end
-        self.metadata[self.file_cntr]['dt']      = self.t_end-self.t_start
         self.metadata[self.file_cntr]['history'] = self.args
+
+    def set_ref_window(self):
+        self.metadata[self.file_cntr]['t_window'] = self.t_window
 
     def set_channels(self,inputs):
 

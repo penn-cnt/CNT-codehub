@@ -40,9 +40,10 @@ class project_handlers:
         for ii,ifile in tqdm(enumerate(self.infiles), desc=desc, total=nfile, bar_format=self.bar_frmt, position=self.worker_number, leave=False, disable=self.args.silent,dynamic_ncols=True):            
         
             # Save current file info
-            self.infile    = ifile
-            self.t_start   = self.start_times[ii]
-            self.t_end     = self.end_times[ii]
+            self.infile   = ifile
+            self.t_start  = self.start_times[ii]
+            self.t_end    = self.end_times[ii]
+            self.t_window = self.ref_windows[ii]
 
             # Initialize the metadata container
             self.file_cntr = ii

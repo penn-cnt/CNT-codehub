@@ -114,7 +114,7 @@ class audit:
                 self.input_paths.append(str(ifolder))
                 self.output_names.append(f"{raw_output[ii]:09}.audit")
             else:
-                #print(f"Skipping {ifolder}.")
+                print(f"Skipping {ifolder}.")
                 pass
         self.input_paths.append(str(self.rootdir))
         self.output_names.append(f"{len(self.folders):09}.audit")

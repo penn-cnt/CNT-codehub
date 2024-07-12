@@ -65,6 +65,7 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         self.infiles       = input_params[:,0]
         self.start_times   = input_params[:,1].astype('float')
         self.end_times     = input_params[:,2].astype('float')
+        self.ref_windows   = input_params[:,3]
         self.args          = args
         self.unique_id     = uuid.uuid4()
         self.bar_frmt      = '{l_bar}{bar}| {n_fmt}/{total_fmt}|'
@@ -176,7 +177,7 @@ def parse_list(input_str):
 
     # Split the input using either spaces or commas as separators
     values = input_str.replace(',', ' ').split()
-    return [int(value) for value in values]
+    return list(PD.to_numeric([float(value) for value in values],downcast='integer'))
 
 def start_analysis(data_chunk,args,timestamp,worker_id,barrier):
     """
@@ -285,10 +286,10 @@ def argument_handler(argument_dir='./',require_flag=True):
     datamerge_group.add_argument("--ncpu", type=int, default=1, help="Number of CPUs to use if multithread.")
 
     datachunk_group = parser.add_argument_group('Data Chunking Options')
-    datachunk_group.add_argument("--t_start", type=float, default=0, help="Time in seconds to start data collection.")
-    datachunk_group.add_argument("--t_end", type=float, default=-1, help="Time in seconds to end data collection. (-1 represents the end of the file.)")
-    datachunk_group.add_argument("--t_window", type=parse_list, help="List of window sizes, effectively setting multiple t_start and t_end for a single file.")
-    datachunk_group.add_argument("--t_overlap", type=float, default=0, help="If you want overlapping time windows, this is the fraction of t_window overlapping.")
+    datachunk_group.add_argument("--t_start", type=parse_list, default=[0], help="Time in seconds to start data collection.")
+    datachunk_group.add_argument("--t_end", type=parse_list, default=[-1], help="Time in seconds to end data collection. (-1 represents the end of the file.)")
+    datachunk_group.add_argument("--t_window", type=parse_list, default=[-1], help="List of window sizes, effectively setting multiple t_start and t_end for a single file.")
+    datachunk_group.add_argument("--t_overlap", type=parse_list, default=[0], help="If you want overlapping time windows, this is the fraction of t_window overlapping.")
 
     ssh_group = parser.add_argument_group('SSH Data Loading Options')
     ssh_group.add_argument("--ssh_host", type=str, help="If loading data via ssh tunnel, this is the host ssh connection string.")
@@ -343,6 +344,16 @@ def argument_handler(argument_dir='./',require_flag=True):
         if args.outdir[-1] != '/':
             args.outdir += '/'
 
+    # Make sure the times are properly defined
+    if (np.array(args.t_start)).any() < 0: raise ValueError("t_start must be greater than 0.")
+    if ((np.array(args.t_end)<=0)*(np.array(args.t_end)!=-1)).any(): raise ValueError("t_end must be greater than 0 or -1 (denoting end of file).")
+    if ((np.array(args.t_window)<=0)*(np.array(args.t_window)!=-1)).any(): raise ValueError("t_window must be greater than 0 or -1 (denoting end of file).")
+    if (np.array(args.t_overlap)<0).any() or (np.array(args.t_overlap)>1).any(): raise ValueError("t_overlap must be between 0 and 1.")
+
+    # Make sure if the user passed a list entry for time, all the time entries are lists
+    itr = iter([args.t_start,args.t_end,args.t_window,args.t_overlap])
+    if not all(len(l) == len(next(itr)) for l in itr): raise IndexError("Please provide equal number of entries for t_start, t_end, t_window, and t_overlap")
+
     # Help info if needed to be passed back as an object and not string
     help_info    = {}
     type_info    = {}
@@ -387,14 +398,21 @@ if __name__ == "__main__":
             file_path = args.input_str
 
         # Read in csv file
-        input_csv   = PD.read_csv(file_path)
-        files       = input_csv['filepath'].values
-        start_times = input_csv['start_time'].values
-        end_times   = input_csv['end_time'].values
+        input_csv = PD.read_csv(file_path)
 
-        # Replace NaNs with appropriate times as needed
-        start_times = np.nan_to_num(start_times,nan=args.t_start)
-        end_times   = np.nan_to_num(end_times,nan=args.t_end)
+        # Clean up any missing values using the user provided values
+        input_DF = PD.DataFrame()
+        for idx in range(len(args.t_start)):
+            iDF               = input_csv.copy()
+            iDF['start_time'] = iDF['start_time'].fillna(args.t_start[idx])
+            iDF['end_time']   = iDF['end_time'].fillna(args.t_end[idx])
+            input_DF          = PD.concat((input_DF,iDF))
+        input_DF = input_DF.drop_duplicates().sort_values(by=['filepath'])
+
+        # Grab the distinct arrays 
+        files       = input_DF['filepath'].values
+        start_times = input_DF['start_time'].values
+        end_times   = input_DF['end_time'].values
     elif args.input == 'GLOB':
 
         if args.input_str == None:
@@ -403,15 +421,21 @@ if __name__ == "__main__":
             file_path = prompt("Please enter (wildcard enabled) path to input files: ", completer=completer)
         else:
             file_path = args.input_str
-        files     = glob.glob(file_path)
+        files = glob.glob(file_path)
 
         # Make sure we were handed a good filepath
         if len(files) == 0:
             raise IndexError("No data found with that search. Cannot iterate over a null file list.")
 
         # Create start and end times array
-        start_times = args.t_start*np.ones(len(files))
-        end_times   = args.t_end*np.ones(len(files))
+        start_times = np.array([])
+        end_times   = np.array([])
+        for idx,ival in enumerate(args.t_start):
+            istart      = ival*np.ones(len(files))
+            iend        = args.t_end[idx]*np.ones(len(files))
+            start_times = np.concatenate((start_times,istart))
+            end_times   = np.concatenate((end_times,iend))
+        files = np.tile(files,len(args.t_start))
     else:
         # Tab completion enabled input
         completer = PathCompleter()
@@ -419,8 +443,14 @@ if __name__ == "__main__":
         files     = [file_path]
 
         # Create start and end times array
-        start_times = args.t_start*np.ones(len(files))
-        end_times   = args.t_end*np.ones(len(files))
+        start_times = np.array([])
+        end_times   = np.array([])
+        for idx,ival in enumerate(args.t_start):
+            istart      = ival*np.ones(len(files))
+            iend        = args.t_end[idx]*np.ones(len(files))
+            start_times = np.concatenate((start_times,istart))
+            end_times   = np.concatenate((end_times,iend))
+        files = np.tile(files,len(args.t_start))
 
     # Cast the inputs as arrays
     files       = np.array(files)
@@ -428,8 +458,8 @@ if __name__ == "__main__":
     end_times   = np.array(end_times)
 
     # Curate the data inputs to get a valid (sub)set that maintains stratification of subjects
-    DC                            = data_curation(args,files,start_times,end_times)
-    files, start_times, end_times = DC.get_dataload()
+    DC = data_curation(args,files,start_times,end_times)
+    files, start_times, end_times,ref_windows = DC.get_dataload()
 
     # Make configuration files as needed
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -449,7 +479,7 @@ if __name__ == "__main__":
         config_handler.create_config()
 
     # Multithread options
-    input_parameters = np.column_stack((files, start_times, end_times))
+    input_parameters = np.column_stack((files, start_times, end_times,ref_windows))
     if args.multithread:
 
         # Calculate the size of each subset based on the number of processes
@@ -481,6 +511,3 @@ if __name__ == "__main__":
     # Perform merge if requested
     if not args.nomerge:
         merge_outputs(args,timestamp)
-
-    # Final clean up of the terminal
-    #os.system("clear")

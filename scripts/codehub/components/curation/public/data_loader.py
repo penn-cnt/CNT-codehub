@@ -69,6 +69,9 @@ class data_loader:
             # Get the rawdata
             self.raw_dataslice(sample_frequency,majoraxis=self.args.orientation)
 
+            # Set the clip duration referenced to the whole file
+            metadata_handler.set_ref_window(self)
+
             return True
         else:
             return False
@@ -141,6 +144,12 @@ class data_loader:
         # Get the underlying data shapes
         self.ncol = len(self.raw_data)
         self.nrow = max([ival.size for ival in self.raw_data])
+
+        # Get the duration so we can more readily identify different length clips for post-hoc criteria (i.e. Find full file length rows to compare to a single clip)
+        if majoraxis.lower() == 'column':
+            self.duration = (samp_end-samp_start)/self.indata.shape[0]
+        elif majoraxis.lower() == 'row':
+            self.duration = (samp_end-samp_start)/self.indata.shape[1]
 
     ###################################
     #### User Provided Logic Below ####

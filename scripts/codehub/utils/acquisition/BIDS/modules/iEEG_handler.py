@@ -164,6 +164,7 @@ class iEEG_download(BIDS_handler):
         BIDS_handler.__init__(self)
         self.session_method_handler(start,duration)
         if self.success_flag == True:
+            BIDS_handler.channel_cleanup(self)
             BIDS_handler.get_channel_type(self)
             BIDS_handler.make_info(self)
             BIDS_handler.add_raw(self)
@@ -221,6 +222,7 @@ class iEEG_download(BIDS_handler):
                             print(f"Downloading {self.current_file} annotation at {istart}")
                         self.session_method_handler(istart, self.clip_durations[idx])
                         if self.success_flag == True:
+                            BIDS_handler.channel_cleanup(self)
                             BIDS_handler.get_channel_type(self)
                             BIDS_handler.make_info(self)
                             BIDS_handler.add_raw(self)
