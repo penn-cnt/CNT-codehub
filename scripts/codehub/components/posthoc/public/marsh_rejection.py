@@ -2,6 +2,9 @@ import numpy as np
 import pandas as PD
 from sys import argv,exit
 
+import warnings
+warnings.filterwarnings('ignore')
+
 class marsh_rejection:
     """
     Applies a marsh rejection mask to a dataframe. 
@@ -39,6 +42,18 @@ class marsh_rejection:
         # Make a dataslice just for rms and just for ll
         DF_rms = self.DF.loc[self.DF.method=='rms']
         DF_ll = self.DF.loc[self.DF.method=='line_length']
+
+        # Ensure matched sizes. This can vary if the pipeline had to skip a bad entry
+        RMS_indexed          = DF_rms.set_index(['file','t_start','t_end','t_window'])
+        LL_indexed           = DF_rms.set_index(['file','t_start','t_end','t_window'])
+        DF_indexed           = self.DF.set_index(['file','t_start','t_end','t_window'])
+        intersecting_indices = RMS_indexed.index.intersection(LL_indexed.index)
+        
+        # Loop through and recreate the dataframes. Not sure why the full index call crashes with multiindex.
+        tmp     = [DF_indexed.loc[index].reset_index() for index in intersecting_indices]
+        self.DF = PD.concat(tmp,ignore_index=True)
+        DF_rms  = self.DF.loc[self.DF.method=='rms']
+        DF_ll   = self.DF.loc[self.DF.method=='line_length']
 
         # Get the group level values
         DF_rms_mean  = DF_rms.groupby(['file'])[self.channels].mean()
