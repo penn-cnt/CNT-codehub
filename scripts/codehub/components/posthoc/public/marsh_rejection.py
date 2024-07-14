@@ -36,6 +36,7 @@ class marsh_rejection:
     def drop_file(self):
 
         self.DF = self.DF[self.DF['t_window'] != -1]
+        self.DF.drop_duplicates(subset=self.ref_cols,inplace=True)
 
     def get_mean_stats(self):
 
@@ -43,17 +44,22 @@ class marsh_rejection:
         DF_rms = self.DF.loc[self.DF.method=='rms']
         DF_ll = self.DF.loc[self.DF.method=='line_length']
 
+        """
         # Ensure matched sizes. This can vary if the pipeline had to skip a bad entry
         RMS_indexed          = DF_rms.set_index(['file','t_start','t_end','t_window'])
         LL_indexed           = DF_rms.set_index(['file','t_start','t_end','t_window'])
         DF_indexed           = self.DF.set_index(['file','t_start','t_end','t_window'])
-        intersecting_indices = RMS_indexed.index.intersection(LL_indexed.index)
-        
+        if DF_rms.shape[0] < DF_ll.shape[0]:
+            intersecting_indices = RMS_indexed.index.intersection(LL_indexed.index)
+        else:
+            intersecting_indices = LL_indexed.index.intersection(RMS_indexed.index)
+
         # Loop through and recreate the dataframes. Not sure why the full index call crashes with multiindex.
         tmp     = [DF_indexed.loc[index].reset_index() for index in intersecting_indices]
         self.DF = PD.concat(tmp,ignore_index=True)
         DF_rms  = self.DF.loc[self.DF.method=='rms']
         DF_ll   = self.DF.loc[self.DF.method=='line_length']
+        """
 
         # Get the group level values
         DF_rms_mean  = DF_rms.groupby(['file'])[self.channels].mean()
