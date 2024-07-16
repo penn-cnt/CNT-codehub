@@ -182,7 +182,7 @@ class data_loader:
             try:
                 # Read in the data via mne backend
                 raw           = read_raw_edf(self.infile,verbose=False)
-                self.indata   = raw.get_data().T
+                self.indata   = 1e6*raw.get_data().T     #  MNE, unlike PyEDFlib, does not auto convert uV to V.
                 self.channels = raw.ch_names
                 self.sfreq    = raw.info.get('sfreq')
 
