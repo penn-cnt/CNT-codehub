@@ -337,6 +337,7 @@ def argument_handler(argument_dir='./',require_flag=True):
     misc_group.add_argument("--input_str", type=str, help="Optional. If glob input, wildcard path. If csv/manual, filepath to input csv/raw data.")
     misc_group.add_argument("--silent", action='store_true', default=False, help="Silent mode.")
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug mode. If set, does not save results. Useful for testing code.")
+    misc_group.add_argument("--trace", action='store_true', default=False, help="Trace data through the code. If selected, any user function that looks for trace can return extra information (i.e. intermediate calculations) to the metadata object.")
     args = parser.parse_args()
 
     # Make sure the output directory has a trailing /

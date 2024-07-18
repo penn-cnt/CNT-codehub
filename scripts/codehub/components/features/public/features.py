@@ -157,6 +157,7 @@ class signal_processing:
         Returns:
             spectral_energy (float): Spectral energy within the frequency band.
             optional_tag (string): Unique identifier that is added to the output dataframe to show the frequency window for which a welch spectral energy was calculated.
+            (frequencies,psd): If trace is enabled for this pipeline, return the frequencies and psd for this channel for testing.
         """
 
         # Add in the optional tagging to denote frequency range of this step
@@ -176,7 +177,10 @@ class signal_processing:
         mask            = (frequencies >= low_freq) & (frequencies <= hi_freq)
         spectral_energy = np.trapz(psd[mask], frequencies[mask])
 
-        return spectral_energy,self.optional_tag
+        if not trace:
+            return spectral_energy,self.optional_tag
+        else:
+            return spectral_energy,self.optional_tag,(frequencies,psd)
     
     def topographic_peaks(self,prominence_height,min_width,height_unit='zscore',width_unit='seconds',detrend_flag=False):
         """
@@ -325,10 +329,12 @@ class features:
         """
 
         # Initialize some variables
-        dummy_key       = list(self.metadata.keys())[0]
-        channels        = self.metadata[dummy_key]['montage_channels']
-        outcols         = ['file','t_start','t_end','t_window','method','tag']+channels
-        
+        global trace
+        trace     = self.args.trace
+        dummy_key = list(self.metadata.keys())[0]
+        channels  = self.metadata[dummy_key]['montage_channels']
+        outcols   = ['file','t_start','t_end','t_window','method','tag']+channels
+
         # Read in the feature configuration
         YL = config_loader(self.args.feature_file)
         config,self.feature_commands = YL.return_handler()
@@ -386,15 +392,25 @@ class features:
                                     namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel)
 
                                 # Get the method name and return results from the method
-                                method_call         = getattr(namespace,method_name)
-                                result_a, result_b  = method_call(**method_args)
+                                method_call = getattr(namespace,method_name)
+                                results     = method_call(**method_args)
+                                result_a    = results[0]
+                                result_b    = results[1]
+                                if len(results) == 3:
+                                    result_c = results[2]
+
 
                                 # Check if we have a multivalue output
                                 if type(result_a) == list:
                                     metadata_handler.add_metadata(self,idx,method_name,result_a)
                                     result_a = result_a[0]
 
+                                # Add the results to the output object
                                 output.append(result_a)
+
+                                # If the user wants to trace some values (see the results as they are processed), they can return result_c
+                                if result_c != None:
+                                    metadata_handler.add_metadata(self,idx,f"{method_name}_trace_{channels[ichannel]}",result_c)
                             except Exception as e:
 
                                 # Add the ability to see the error if debugging
