@@ -2,6 +2,7 @@ import os
 import ast
 import sys
 import inspect
+import warnings
 import numpy as np
 import pandas as PD
 from tqdm import tqdm
@@ -17,6 +18,9 @@ from components.metadata.public.metadata_handler import *
 # In some cases, we want variables to persist through steps. (i.e. A solver, fitting class, disk i/o, etc.) Persistance_dict can store results across steps.
 global persistance_dict
 persistance_dict = {}
+
+# Ignore FutureWarnings. Pandas is giving a warning for concat. But the data is not zero. Might be due to a single channel of all NaNs.
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class FOOOF_processing:
 
@@ -44,8 +48,10 @@ class FOOOF_processing:
             fg.fit(self.freqs, self.initial_power_spectrum, self.freq_range)
 
             # get the one over f curve
-            b0,b1      = fg.get_results().aperiodic_params
-            one_over_f = b0-np.log10(self.freqs**b1)
+            b0,b1 = fg.get_results().aperiodic_params
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                one_over_f = b0-np.log10(self.freqs**b1)
 
             # Get the residual periodic fit
             periodic_comp = self.initial_power_spectrum-one_over_f
@@ -396,9 +402,10 @@ class features:
                                 results     = method_call(**method_args)
                                 result_a    = results[0]
                                 result_b    = results[1]
-                                if len(results) == 3:
-                                    result_c = results[2]
 
+                                # If the user wants to trace some values (see the results as they are processed), they can return result_c
+                                if len(results) == 3:
+                                    metadata_handler.add_metadata(self,idx,f"{method_name}_trace_{channels[ichannel]}",results[2])
 
                                 # Check if we have a multivalue output
                                 if type(result_a) == list:
@@ -408,13 +415,10 @@ class features:
                                 # Add the results to the output object
                                 output.append(result_a)
 
-                                # If the user wants to trace some values (see the results as they are processed), they can return result_c
-                                if result_c != None:
-                                    metadata_handler.add_metadata(self,idx,f"{method_name}_trace_{channels[ichannel]}",result_c)
                             except Exception as e:
 
                                 # Add the ability to see the error if debugging
-                                if self.args.debug:
+                                if self.args.debug and not self.args.silent:
                                     print(f"Error {e} in step {istep}.")
 
                                 # We need a flexible solution to errors, so just populating a nan value

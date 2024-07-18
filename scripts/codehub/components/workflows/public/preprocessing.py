@@ -316,6 +316,10 @@ class preprocessing_utils:
             outpath = self.outdir+f"/preprocessing_snapshot/pickle/{self.step_num:02}/"
         outfile = outpath+self.filename
 
+        # Downcast the results to a smaller size
+        for icol in self.dataset.columns:
+            self.dataset[icol] = self.dataset[icol].astype('float16')
+ 
         # Debug flag
         if not self.debug:
             if substr == None or substr in self.filename:
