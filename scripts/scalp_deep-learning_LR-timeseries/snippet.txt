@@ -1,0 +1,112 @@
+    """
+    # Get the unique tags to loop over and define the tag groups
+    tag_groups = {'welch':[0,1,2,3],'naive':[4,5],'quantile':[6,7],'fooof_bs':[8,9],'fooof':[10,11,12,13]}
+    utags      = DF_sleep.tag.unique()
+
+    # Loop over the uids
+    for iuid in uid_intersect[:1]:
+        
+        # get the current data slices for user id
+        DF_sleep_slice = DF_sleep.loc[DF_sleep.uid==iuid]
+        DF_wake_slice  = DF_wake.loc[DF_wake.uid==iuid]
+
+        # Get the melted dataframe for easy sns plotting
+        DF_sleep_melt = PD.melt(DF_sleep_slice, id_vars=['tag'], value_vars=channels, var_name='channel', value_name='channel_values')
+        DF_wake_melt  = PD.melt(DF_wake_slice, id_vars=['tag'], value_vars=channels, var_name='channel', value_name='channel_values')
+
+        # Clean up and merge wake and sleep with identifiers for plotting
+        DF_sleep_melt['sleep_state'] = 'sleep'
+        DF_wake_melt['sleep_state']  = 'awake'
+        DF_merged                    = PD.concat((DF_sleep_melt,DF_wake_melt))
+
+        # Plot the results
+        for itag in utags:
+
+            # Grab the string rep of the current tag
+            tag_str = map_sleep['tag'][itag]
+
+            # Get the new dataslices
+            iDF            = DF_merged.loc[DF_merged.tag==itag]
+            iDF['channel'] = iDF['channel'].map(lambda x:channel_map[x])
+
+            # Plot the results
+            fig = PLT.figure(dpi=100,figsize=(8.,6.))
+            ax1 = fig.add_subplot(111)
+            sns.boxplot(data=iDF,x='channel',y='channel_values',hue='sleep_state',ax=ax1)
+            ax1.set_title(f"{tag_str}")
+            ax1.set_xticklabels(channels,rotation='vertical')
+            fig.tight_layout()
+            PLT.savefig(f"../../user_data/derivative/sleep_wake/univariate/plots/{iuid:04d}_{tag_str}.png")
+            PLT.close("all")
+    """
+
+
+        # Get the 3 stdev limit for better plotting
+    fooof_alpha_vals = DF_bandpower[['sleep_fooof_8-13Hz','wake_fooof_8-13Hz']]
+    fooof_delta_vals = DF_bandpower[['sleep_fooof_8-13Hz','wake_fooof_8-13Hz']]
+    fooof_alpha_2z   = (np.median(fooof_alpha_vals.values)+2*np.std(fooof_alpha_vals)).max()
+    fooof_delta_2z   = (np.median(fooof_delta_vals.values)+2*np.std(fooof_delta_vals)).max()
+
+    # Prepare plots
+    fig = PLT.figure(dpi=100,figsize=(6.,6.))
+    ax1 = fig.add_subplot(111)
+    sns.scatterplot(data=DF_bandpower,x='sleep_fooof_8-13Hz',y='wake_fooof_8-13Hz',ax=ax1)
+    amin = np.amin([ax1.get_xlim()[0],ax1.get_ylim()[0]])
+    amax = np.amax([ax1.get_xlim()[1],ax1.get_ylim()[1]])
+    amax = np.amin([amax,fooof_alpha_2z])
+    ax1.set_xlim([amin,amax])
+    ax1.set_ylim([amin,amax])
+    PLT.plot([0,amax],[0,amax],color='r',ls='--')
+    PLT.show()
+
+    fig = PLT.figure(dpi=100,figsize=(6.,6.))
+    ax1 = fig.add_subplot(111)
+    sns.scatterplot(data=DF_bandpower,x='sleep_fooof_2-4Hz',y='wake_fooof_2-4Hz',ax=ax1)
+    amin = np.amin([ax1.get_xlim()[0],ax1.get_ylim()[0]])
+    amax = np.amax([ax1.get_xlim()[1],ax1.get_ylim()[1]])
+    amax = np.amin([amax,fooof_delta_2z])
+    ax1.set_xlim([amin,amax])
+    ax1.set_ylim([amin,amax])
+    PLT.plot([0,amax],[0,amax],color='r',ls='--')
+    PLT.show()
+
+
+
+            # Get the median value per channel first
+            alpha_delta_sleep_channel_median = np.median(alpha_delta_sleep.values,axis=0)
+            alpha_delta_wake_channel_median  = np.median(alpha_delta_wake.values,axis=0)
+
+            # Make a temporary dataframe to append to output
+            uid_array = iuid*np.ones(len(channels))
+            DF_array  = np.hstack((uid_array.reshape((-1,1)),channels.reshape((-1,1)),alpha_delta_sleep_channel_median.reshape((-1,1)),alpha_delta_wake_channel_median.reshape((-1,1))))
+            iDF       = PD.DataFrame(DF_array,columns=['uid','channel','ad_sleep','ad_wake'])
+
+
+    min_alpha_delta     = DF_alpha_delta.groupby(['uid']).apply(lambda x:np.amin(x[['ad_sleep','ad_wake']].values))
+
+    # Make a melted dataframe for easier plotting
+    ad_melt = PD.melt(DF_alpha_delta, id_vars=['uid'], value_vars=['ad_sleep','ad_wake'], var_name='sleep_state', value_name='alpha_delta')
+    uids    = ad_melt.uid.unique()
+    for iuid in uids:
+
+        iDF                = ad_melt.loc[ad_melt.uid==iuid]
+        iDF['alpha_delta'] = iDF['alpha_delta']#-min_alpha_delta.loc[iuid]
+        sns.boxplot(data=iDF,x='sleep_state',y='alpha_delta')
+        PLT.show()
+
+
+    # Make sure we have the same time segments
+    ustart        = DF_wake.t_start.unique()
+    sleep_indices = DF_sleep.groupby(['file','tag','uid']).indices
+    wake_indices  = DF_wake.groupby(['file','tag','uid']).indices
+    sleep_keys    = list(sleep_indices.keys())
+    wake_keys     = list(wake_indices.keys())
+    print(ustart.size)
+    for ikey in sleep_keys:
+        utimes = DF_sleep.iloc[sleep_indices[ikey]]['t_start'].unique()
+        ustart = np.intersect1d(ustart,utimes)
+    print(ustart.size)
+    for ikey in wake_keys:
+        utimes = DF_wake.iloc[wake_indices[ikey]]['t_start'].unique()
+        ustart = np.intersect1d(ustart,utimes)
+    print(ustart.size)

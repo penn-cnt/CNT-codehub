@@ -2,6 +2,7 @@ import os
 import pickle
 import argparse
 import pandas as PD
+from sys import exit
 from sklearn.decomposition import SparsePCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -112,10 +113,6 @@ def temporal_split(DF,test_fraction):
     return DF.iloc[train_inds].reset_index(drop=True),DF.iloc[test_inds].reset_index(drop=True)
 
 def subject_split(DF,test_fraction,mapping_file):
-
-    # Add in the mapping
-    mapping = pickle.load(open(mapping_file,"rb"))
-    DF['uid'] = DF.file.apply(lambda x: mapping[x])
     
     # Get a unique pairing for target and uid to ensure we also keep data balance
     uDF = DF[['uid','target']].drop_duplicates()
@@ -165,7 +162,8 @@ def prepare_TUEG(DF_TUEG,MAP_TUEG):
 def prepare_HUP(DF_HUP,MAP_HUP):
 
     # Drop unneeded columns
-    DF_HUP = DF_HUP.drop(columns=['annotation','uid'],axis=1)
+    dropcols = np.intersect1d(DF_HUP.columns,['annotation'])
+    DF_HUP   = DF_HUP.drop(columns=dropcols,axis=1)
 
     # Clean the data
     CC = CLEAN_CLASS(DF_HUP)
@@ -177,8 +175,13 @@ def prepare_HUP(DF_HUP,MAP_HUP):
     DF_HUP,CHAN_HUP = DP.return_data()
 
     # Make the binary classification
-    DF_HUP = DF_HUP.loc[DF_HUP.target.isin([0,3])]
-    DF_HUP['target'].replace(3,1,inplace=True)
+    if 'target' in MAP_HUP.keys():
+        raw_target_map   = np.array(list(MAP_HUP['target']))
+        target_map       = dict(zip(np.arange(raw_target_map.size),raw_target_map.ravel()))
+        DF_HUP['target'] = DF_HUP['target'].apply(lambda x:target_map[x])
+    new_target_map   = {'pnes':0,'epilepsy':1}
+    DF_HUP           = DF_HUP.loc[DF_HUP.target.isin(['pnes','epilepsy'])] 
+    DF_HUP['target'] = DF_HUP['target'].apply(lambda x:new_target_map[x])
 
     # Create the vectors
     MI                  = make_inputs(DF_HUP)
@@ -214,12 +217,9 @@ def apply_pca(enc,DF,CHANNELS):
 if __name__ == '__main__':
 
     # Command line options needed to obtain data.
-    #default_tueg = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/slowing/041724/DATA/'
-    #default_hup  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/DATA/'
-    #default_out  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/MODEL/SUBJECT/'
-    default_tueg = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/DATA/TUEG/'
-    default_hup  = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/DATA/HUP/'
-    default_out  = '/mnt/leif/littlab/users/bjprager/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/MODEL/'
+    default_tueg = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/slowing/041724/DATA/'
+    default_hup  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/DATA/052124/sleep/'
+    default_out  = '/Users/bjprager/Documents/GitHub/scalp_deep-learning/user_data/derivative/epilepsy/outputs/MODEL/052124/SLEEP/SUBJECT/'
     parser = argparse.ArgumentParser(description="iEEG to bids conversion tool.")
     parser.add_argument("--model_TUEG", type=str, default=f"{default_tueg}merged_model.pickle", help="TUEG Merged Model file path.")
     parser.add_argument("--map_TUEG", type=str, default=f"{default_tueg}merged_map.pickle", help="TUEG Merged map file path.")
@@ -266,8 +266,8 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.output_HUP):
         # Read in the HUP data
-        DF_HUP  = PD.read_pickle(args.model_HUP)
-        MAP_HUP = pickle.load(open(args.map_HUP,"rb"))
+        DF_HUP   = PD.read_pickle(args.model_HUP)
+        MAP_HUP  = pickle.load(open(args.map_HUP,"rb"))
 
         # Prepare HUP
         RAWVECTORS_HUP,CHANNELS_HUP = prepare_HUP(DF_HUP,MAP_HUP)
@@ -304,11 +304,13 @@ if __name__ == '__main__':
 
     # Make the logistic regression fit for TUEG slowing
     clf_slow,scaler_slow = lr_handler(args.slowing_output,TUEG_TRAIN,TUEG_TEST,'Slowing Prediction for time segments',lrtype,args.ncpu)
+    
+    # Make the logistic regression fit for HUP
     clf_epi_noslow       = lr_handler(args.epilepsy_output_noslow,HUP_TRAIN,HUP_TEST,'Epilepsy Prediction w/o slowing',lrtype,args.ncpu)
 
     # Get the predictions for slowing for HUP
-    HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
-    HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
+    #HUP_TRAIN_scaled = add_slowing_prob(HUP_TRAIN,clf_slow)
+    #HUP_TEST_scaled  = add_slowing_prob(HUP_TEST,clf_slow)
 
     # Get the predictions with slowing added
-    clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)
+    #clf_epi_slow = lr_handler(args.epilepsy_output_slow,HUP_TRAIN_scaled,HUP_TEST_scaled,'Epilepsy Prediction w/ slowing',lrtype,args.ncpu,user_scaler_list=scaler_slow)

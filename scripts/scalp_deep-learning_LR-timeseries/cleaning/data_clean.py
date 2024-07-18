@@ -103,9 +103,9 @@ class make_inputs:
             iDF = self.DF.loc[self.DF.tag==itag].drop(['tag'],axis=1)
 
             if idx == 0:
-                new_DF = PD.merge(new_DF, iDF, how='outer', on=['file','t_start','target'], suffixes=[f"_0",f"_{itag}"])
+                new_DF = PD.merge(new_DF, iDF, how='outer', on=['file','t_start','target','uid'], suffixes=[f"_0",f"_{itag}"])
             else:
-                new_DF = PD.merge(new_DF, iDF, how='outer', on=['file','t_start','target'], suffixes=["",f"_{itag}"])
+                new_DF = PD.merge(new_DF, iDF, how='outer', on=['file','t_start','target','uid'], suffixes=["",f"_{itag}"])
 
         # Get the channels
         channels = np.setdiff1d(new_DF.columns,['file','t_start','target'])
