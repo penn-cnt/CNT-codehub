@@ -5,11 +5,14 @@ from sys import argv
 
 if __name__ == '__main__':
 
+    duration = 30
+
     # Read in the data and apply marsh
     DF = PD.read_pickle(argv[1])
-    DF = DF.loc[DF.t_window==10]
+    DF = DF.loc[DF.t_window==duration]
     DF = DF.loc[DF.marsh_rejection]
     DF.drop(['uid','target','annotation','marsh_rejection'],axis=1,inplace=True)
+    DF.dropna(inplace=True)
 
     # Get the channel labels
     id_cols  = ['file', 't_start', 't_end', 't_window', 'method', 'tag']
@@ -71,7 +74,7 @@ if __name__ == '__main__':
     for idx,irow in DF.iterrows():
         finds = (files==irow.file)
         tinds = (t_start==irow.t_start)
-        dinds = (durs==10)
+        dinds = (durs==duration)
         refkeys.append(keys[finds&tinds&dinds][0])
     DF['keys'] = refkeys
     
