@@ -32,7 +32,7 @@ class FOOOF_processing:
         self.ichannel   = ichannel
 
     def create_initial_power_spectra(self):
-        self.freqs, initial_power_spectrum = compute_spectrum_welch(self.data, self.fs)
+        self.freqs, initial_power_spectrum = compute_spectrum_welch(self.data, self.fs,nperseg=self.nperseg, noverlap=self.noverlap)
         inds                               = (self.freqs>0)&np.isfinite(initial_power_spectrum)&(initial_power_spectrum>0)
         freqs                              = self.freqs[inds]
         initial_power_spectrum             = initial_power_spectrum[inds]
@@ -113,7 +113,7 @@ class FOOOF_processing:
 
         return b1,self.optional_tag
 
-    def fooof_bandpower(self,lo_freq,hi_freq):
+    def fooof_bandpower(self,lo_freq,hi_freq, win_size=2., win_stride=1.):
         """
         Return the bandpower with the aperiodic component removed.
 
@@ -125,6 +125,10 @@ class FOOOF_processing:
         low_freq_str      = f"{lo_freq:.2f}"
         hi_freq_str       = f"{hi_freq:.2f}"
         self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
+
+        # Get the number of samples in each window for welch average and the overlap
+        self.nperseg = int(float(win_size) * self.fs)
+        self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
         self.check_persistance()
