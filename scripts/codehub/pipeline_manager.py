@@ -61,9 +61,6 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
             infile (str): path to datafile that needs to be loaded
         """
 
-        print(input_parameters)
-        exit()
-
         # Make args visible across inheritance
         self.infiles       = input_params[:,0]
         self.start_times   = input_params[:,1].astype('float')
@@ -75,6 +72,10 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         self.timestamp     = timestamp
         self.worker_number = worker_number
         self.barrier       = barrier
+
+        print(self.start_times)
+        print(self.end_times)
+        exit()
 
         # Create the metalevel container
         metadata_handler.__init__(self)
