@@ -462,6 +462,10 @@ if __name__ == "__main__":
     DC = data_curation(args,files,start_times,end_times)
     files, start_times, end_times,ref_windows = DC.get_dataload()
 
+    for idx in range(10):
+        print(start_times[idx],end_times[idx])
+        exit()
+
     # Make configuration files as needed
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
     if args.preprocess_file == None and not args.no_preprocess_flag:
