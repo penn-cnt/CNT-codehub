@@ -150,8 +150,6 @@ class project_handlers:
 
                 # Put the data into a specific montage
                 self.montaged_dataframe = channel_montage.pipeline(self,df)
-                print(self.montaged_dataframe.shape)
-                exit()
 
                 # Update the output list
                 output_manager.update_output_list(self,self.montaged_dataframe.values)
