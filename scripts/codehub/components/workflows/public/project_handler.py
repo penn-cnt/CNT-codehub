@@ -139,7 +139,7 @@ class project_handlers:
             dataframe_manager.column_subsection(self,self.channel_map_out)
 
             # Perform next steps only if we have a viable dataset
-            if self.dataframe.shape[0] >= int(self.t_window*max(self.metadata[self.file_cntr]['fs'])):
+            if self.dataframe.shape[0] >= self.t_window*int(max(self.metadata[self.file_cntr]['fs'])):
 
                 # Make the cleaned mne channel map
                 mne_channels      = mne.channels.make_standard_montage("standard_1020").ch_names
