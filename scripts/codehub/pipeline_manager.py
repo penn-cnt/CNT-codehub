@@ -61,6 +61,9 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
             infile (str): path to datafile that needs to be loaded
         """
 
+        print(input_parameters)
+        exit()
+
         # Make args visible across inheritance
         self.infiles       = input_params[:,0]
         self.start_times   = input_params[:,1].astype('float')
@@ -481,8 +484,6 @@ if __name__ == "__main__":
 
     # Multithread options
     input_parameters = np.column_stack((files, start_times, end_times,ref_windows))
-    print(input_parameters)
-    exit()
     if args.multithread:
 
         # Calculate the size of each subset based on the number of processes
