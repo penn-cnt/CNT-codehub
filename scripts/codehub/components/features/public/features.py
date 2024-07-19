@@ -24,12 +24,13 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class FOOOF_processing:
 
-    def __init__(self, data, fs, freq_range, file, ichannel):
+    def __init__(self, data, fs, freq_range, file, ichannel, trace=False):
         self.data       = data
         self.fs         = fs
         self.freq_range = freq_range
         self.file       = file
         self.ichannel   = ichannel
+        self.trace      = trace
 
     def create_initial_power_spectra(self):
         self.freqs, initial_power_spectrum = compute_spectrum_welch(self.data, self.fs,nperseg=self.nperseg, noverlap=self.noverlap)
@@ -143,7 +144,11 @@ class FOOOF_processing:
             intg = simpson(y=y[inds],x=x[inds])
         else:
             intg = None
-        return intg,self.optional_tag
+
+        if not self.trace:
+            return intg,self.optional_tag
+        else:
+            return intg,self.optional_tag,(x,y)
 
 class signal_processing:
     """
@@ -399,7 +404,7 @@ class features:
                                 if cls.__name__ != 'FOOOF_processing':
                                     namespace = cls(dataset[:,ichannel],fs[ichannel],self.args.trace)
                                 else:
-                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel)
+                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel, self.args.trace)
 
                                 # Get the method name and return results from the method
                                 method_call = getattr(namespace,method_name)
