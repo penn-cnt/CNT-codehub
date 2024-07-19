@@ -139,6 +139,9 @@ class project_handlers:
             dataframe_manager.column_subsection(self,self.channel_map_out)
 
             # Perform next steps only if we have a viable dataset
+            print(self.t_start,self.t_end,self.t_window)
+            exit()
+
             if self.dataframe.shape[0] > 4*int(max(self.metadata[self.file_cntr]['fs'])):
 
                 # Make the cleaned mne channel map
