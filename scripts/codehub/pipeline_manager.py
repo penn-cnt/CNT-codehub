@@ -464,7 +464,6 @@ if __name__ == "__main__":
 
     for idx in range(10):
         print(start_times[idx],end_times[idx])
-        exit()
 
     # Make configuration files as needed
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
