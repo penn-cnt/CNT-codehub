@@ -146,9 +146,10 @@ class signal_processing:
     Class devoted to basic signal processing tasks. (Band-power/peak-finder/etc.)
     """
     
-    def __init__(self, data, fs):
-        self.data = data
-        self.fs   = fs
+    def __init__(self, data, fs, trace=False):
+        self.data  = data
+        self.fs    = fs
+        self.trace = trace
     
     def spectral_energy_welch(self, low_freq=-np.inf, hi_freq=np.inf, win_size=2., win_stride=1.):
         """
@@ -183,7 +184,7 @@ class signal_processing:
         mask            = (frequencies >= low_freq) & (frequencies <= hi_freq)
         spectral_energy = np.trapz(psd[mask], frequencies[mask])
 
-        if not trace:
+        if not self.trace:
             return spectral_energy,self.optional_tag
         else:
             return spectral_energy,self.optional_tag,(frequencies,psd)
@@ -259,9 +260,10 @@ class signal_processing:
 
 class basic_statistics:
 
-    def __init__(self, data, fs):
-        self.data = data
-        self.fs   = fs
+    def __init__(self, data, fs, trace=False):
+        self.data  = data
+        self.fs    = fs
+        self.trace = trace
 
     def mean(self):
         """
@@ -335,8 +337,6 @@ class features:
         """
 
         # Initialize some variables
-        global trace
-        trace     = self.args.trace
         dummy_key = list(self.metadata.keys())[0]
         channels  = self.metadata[dummy_key]['montage_channels']
         outcols   = ['file','t_start','t_end','t_window','method','tag']+channels
@@ -393,7 +393,7 @@ class features:
                                 #################################
                                 # Create namespaces for each class. Then choose which style of initilization is used by logic gate.
                                 if cls.__name__ != 'FOOOF_processing':
-                                    namespace = cls(dataset[:,ichannel],fs[ichannel])
+                                    namespace = cls(dataset[:,ichannel],fs[ichannel],self.args.trace)
                                 else:
                                     namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel)
 
