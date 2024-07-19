@@ -150,6 +150,9 @@ class signal_processing:
         self.data  = data
         self.fs    = fs
         self.trace = trace
+
+        print(self.data.shape)
+        exit()
     
     def spectral_energy_welch(self, low_freq=-np.inf, hi_freq=np.inf, win_size=2., win_stride=1.):
         """

@@ -45,9 +45,6 @@ class project_handlers:
             self.t_end    = self.end_times[ii]
             self.t_window = self.ref_windows[ii]
 
-            print(self.t_start,self.t_end)
-            exit()
-
             # Initialize the metadata container
             self.file_cntr = ii
 
@@ -142,10 +139,7 @@ class project_handlers:
             dataframe_manager.column_subsection(self,self.channel_map_out)
 
             # Perform next steps only if we have a viable dataset
-            print(self.t_start,self.t_end,self.t_window)
-            exit()
-
-            if self.dataframe.shape[0] > 4*int(max(self.metadata[self.file_cntr]['fs'])):
+            if self.dataframe.shape[0] > int(max(self.metadata[self.file_cntr]['fs'])):
 
                 # Make the cleaned mne channel map
                 mne_channels      = mne.channels.make_standard_montage("standard_1020").ch_names
