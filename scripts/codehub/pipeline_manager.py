@@ -73,10 +73,6 @@ class data_manager(project_handlers, metadata_handler, data_loader, channel_mapp
         self.worker_number = worker_number
         self.barrier       = barrier
 
-        print(self.start_times)
-        print(self.end_times)
-        exit()
-
         # Create the metalevel container
         metadata_handler.__init__(self)
  

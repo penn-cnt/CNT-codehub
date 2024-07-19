@@ -45,6 +45,9 @@ class project_handlers:
             self.t_end    = self.end_times[ii]
             self.t_window = self.ref_windows[ii]
 
+            print(self.t_start,self.t_end)
+            exit()
+
             # Initialize the metadata container
             self.file_cntr = ii
 
