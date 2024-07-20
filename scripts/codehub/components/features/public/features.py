@@ -39,8 +39,7 @@ class FOOOF_processing:
         initial_power_spectrum             = initial_power_spectrum[inds]
 
         if len(freqs) == 0:
-            print(self.data)
-            print(self.freqs)
+            print(np.unique(self.data))
             exit()
 
 
