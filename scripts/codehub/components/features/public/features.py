@@ -38,7 +38,10 @@ class FOOOF_processing:
         freqs                              = self.freqs[inds]
         initial_power_spectrum             = initial_power_spectrum[inds]
 
-        print(freqs,initial_power_spectrum)
+        if len(freqs) == 0:
+            print(self.data)
+            print(self.freqs)
+            exit()
 
 
         self.initial_power_spectrum        = np.interp(self.freqs,freqs,initial_power_spectrum)
