@@ -37,12 +37,6 @@ class FOOOF_processing:
         inds                               = (self.freqs>0)&np.isfinite(initial_power_spectrum)&(initial_power_spectrum>0)
         freqs                              = self.freqs[inds]
         initial_power_spectrum             = initial_power_spectrum[inds]
-
-        if len(freqs) == 0:
-            print(np.unique(self.data))
-            exit()
-
-
         self.initial_power_spectrum        = np.interp(self.freqs,freqs,initial_power_spectrum)
 
     def fit_fooof(self):
@@ -410,15 +404,20 @@ class features:
 
                             # Perform preprocessing step
                             try:
+
+                                # Grab the data and give it a first pass check for all zeros
+                                idata = dataset[:,ichannel]
+                                if not np.any(idata):
+                                    raise ValueError("All zero channel data encountered. Skipping.")
                                 
                                 #################################
                                 ###### CLASS INITILIZATION ######
                                 #################################
                                 # Create namespaces for each class. Then choose which style of initilization is used by logic gate.
                                 if cls.__name__ != 'FOOOF_processing':
-                                    namespace = cls(dataset[:,ichannel],fs[ichannel],self.args.trace)
+                                    namespace = cls(idata,fs[ichannel],self.args.trace)
                                 else:
-                                    namespace = cls(dataset[:,ichannel],fs[ichannel],[0.5,128], imeta['file'], ichannel, self.args.trace)
+                                    namespace = cls(idata,fs[ichannel],[0.5,128], imeta['file'], ichannel, self.args.trace)
 
                                 # Get the method name and return results from the method
                                 method_call = getattr(namespace,method_name)
@@ -438,7 +437,7 @@ class features:
                                 # Add the results to the output object
                                 output.append(result_a)
 
-                            except IndexError as e: #Exception as e:
+                            except Exception as e:
 
                                 # Add the ability to see the error if debugging
                                 if self.args.debug and not self.args.silent:
