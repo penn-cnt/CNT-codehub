@@ -407,7 +407,7 @@ class features:
                                 # Grab the data and give it a first pass check for all zeros
                                 idata = dataset[:,ichannel]
                                 if not np.any(idata):
-                                    raise ValueError(f"All zero channel data encountered {ichannel} for file {imeta['file']}. Skipping.")
+                                    raise ValueError(f"Channel {channels[ichannel]} contains all zeros for file {imeta['file']}. Skipping.")
                                 
                                 #################################
                                 ###### CLASS INITILIZATION ######
@@ -456,7 +456,7 @@ class features:
                                         os.system(f"mkdir -p {error_dir}")
 
                                     fp = open(f"{error_dir}{self.worker_number}_features.error","a")
-                                    fp.write(f"Step {istep:02}: Error {e} in {method_name}\n")
+                                    fp.write(f"Step {istep:02}/{method_name}: Error {e}\n")
                                     fp.close()
                                     error_flag = True
 
