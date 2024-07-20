@@ -80,7 +80,7 @@ class FOOOF_processing:
         self.optional_tag = ''
 
         # Get the number of samples in each window for welch average and the overlap
-        self.nperseg = int(float(win_size) * self.fs)
+        self.nperseg  = int(float(win_size) * self.fs)
         self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
@@ -107,7 +107,7 @@ class FOOOF_processing:
         self.optional_tag = ''
 
         # Get the number of samples in each window for welch average and the overlap
-        self.nperseg = int(float(win_size) * self.fs)
+        self.nperseg  = int(float(win_size) * self.fs)
         self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
@@ -136,7 +136,7 @@ class FOOOF_processing:
         self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
 
         # Get the number of samples in each window for welch average and the overlap
-        self.nperseg = int(float(win_size) * self.fs)
+        self.nperseg  = int(float(win_size) * self.fs)
         self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
@@ -432,7 +432,7 @@ class features:
                                 # Add the results to the output object
                                 output.append(result_a)
 
-                            except Exception as e:
+                            except IndexError as e: #Exception as e:
 
                                 # Add the ability to see the error if debugging
                                 if self.args.debug and not self.args.silent:
