@@ -407,7 +407,7 @@ class features:
                                 # Grab the data and give it a first pass check for all zeros
                                 idata = dataset[:,ichannel]
                                 if not np.any(idata):
-                                    raise ValueError(f"Channel {channels[ichannel]} contains all zeros for file {imeta['file']}. Skipping.")
+                                    raise ValueError(f"Channel {channels[ichannel]} contains all zeros for file {imeta['file']}.")
                                 
                                 #################################
                                 ###### CLASS INITILIZATION ######
