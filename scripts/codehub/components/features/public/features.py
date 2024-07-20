@@ -354,13 +354,8 @@ class features:
         """
 
         # Initialize some variables
-        try:
-            dummy_key = list(self.metadata.keys())[0]
-            channels  = self.metadata[dummy_key]['montage_channels']
-            outcols   = ['file','t_start','t_end','t_window','method','tag']+channels
-        except KeyError:
-            print(self.metadata.keys())
-            exit()
+        channels  = self.montage_channels.copy()
+        outcols   = ['file','t_start','t_end','t_window','method','tag']+channels
 
         # Read in the feature configuration
         YL = config_loader(self.args.feature_file)
