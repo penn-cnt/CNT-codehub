@@ -68,7 +68,7 @@ class FOOOF_processing:
             self.create_initial_power_spectra()
             self.fit_fooof()
 
-    def fooof_aperiodic_b0(self):
+    def fooof_aperiodic_b0(self, win_size=2., win_stride=1.):
         """
         Return the constant offset for the aperiodic fit.
 
@@ -78,6 +78,10 @@ class FOOOF_processing:
 
         # Make the optional tag to identify the dataslice
         self.optional_tag = ''
+
+        # Get the number of samples in each window for welch average and the overlap
+        self.nperseg = int(float(win_size) * self.fs)
+        self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
         self.check_persistance()
@@ -91,7 +95,7 @@ class FOOOF_processing:
 
         return b0,self.optional_tag
     
-    def fooof_aperiodic_b1(self):
+    def fooof_aperiodic_b1(self, win_size=2., win_stride=1.):
         """
         Return the powerlaw exponent for the aperiodic fit.
 
@@ -101,6 +105,10 @@ class FOOOF_processing:
 
         # Make the optional tag to identify the dataslice
         self.optional_tag = ''
+
+        # Get the number of samples in each window for welch average and the overlap
+        self.nperseg = int(float(win_size) * self.fs)
+        self.noverlap = int(float(win_stride) * self.fs)
 
         # Check for fooof model
         self.check_persistance()
@@ -444,7 +452,7 @@ class features:
                                         os.system(f"mkdir -p {error_dir}")
 
                                     fp = open(f"{error_dir}{self.worker_number}_features.error","a")
-                                    fp.write(f"Error {e} in {method_name}\n")
+                                    fp.write(f"Step {istep:02}: Error {e} in {method_name}\n")
                                     fp.close()
                                     error_flag = True
 
