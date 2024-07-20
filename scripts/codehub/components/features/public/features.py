@@ -37,6 +37,10 @@ class FOOOF_processing:
         inds                               = (self.freqs>0)&np.isfinite(initial_power_spectrum)&(initial_power_spectrum>0)
         freqs                              = self.freqs[inds]
         initial_power_spectrum             = initial_power_spectrum[inds]
+
+        print(freqs,initial_power_spectrum)
+
+
         self.initial_power_spectrum        = np.interp(self.freqs,freqs,initial_power_spectrum)
 
     def fit_fooof(self):
