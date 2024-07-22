@@ -134,7 +134,7 @@ class iEEG_download(BIDS_handler):
                         self.annotations[idx][event_time_shift] = desc
                         self.annotation_flats.append(desc)
 
-    def download_by_cli(self, uid, file, target, start, duration, proposed_sub, proposed_ses, proposed_run, file_idx):
+    def download_by_cli(self, uid, file, target, start, duration, proposed_sub, proposed_ses, proposed_run, file_idx, fidx):
         """
         Download a single chunk of data from iEEG.org
 
@@ -164,6 +164,8 @@ class iEEG_download(BIDS_handler):
         BIDS_handler.__init__(self)
         self.session_method_handler(start,duration)
         if self.success_flag == True:
+            if fidx == 0:
+                self.data[:,0] = 0
             BIDS_handler.channel_cleanup(self)
             BIDS_handler.get_channel_type(self)
             BIDS_handler.make_info(self)
@@ -383,7 +385,7 @@ class ieeg_handler:
 
         # Loop over files
         IEEG = iEEG_download(self.args,semaphore)
-        for file_idx in file_indices:
+        for fidx,file_idx in enumerate(file_indices):
 
             # Get the current file
             ifile  = self.input_files[file_idx]
@@ -395,7 +397,7 @@ class ieeg_handler:
                 IEEG = iEEG_download(self.args,semaphore)
             else:
                 print(f"Working on {ifile}.")
-                IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],self.proposed_ses[file_idx],self.proposed_run[file_idx],file_idx)
+                IEEG.download_by_cli(iid,ifile,target,self.start_times[file_idx],self.durations[file_idx],self.proposed_sub[file_idx],self.proposed_ses[file_idx],self.proposed_run[file_idx],file_idx,fidx)
 
 
 
