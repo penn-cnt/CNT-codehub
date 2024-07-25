@@ -90,6 +90,8 @@ class channel_montage:
         # Logic for different montages
         if montage.lower() == "hup1020":
             return self.montage_hup1020()
+        elif montage.lower() == 'hup1020_nofzcz':
+            return self.montage_hup1020_noFZCZ()
         elif montage.lower() == "common_average":
             return self.montage_common_average()   
         elif montage.lower() == "neurovista":
@@ -192,7 +194,81 @@ class channel_montage:
 
         # Pass the data to the dataframe class function for montages
         return montage_data 
-    
+
+    def montage_hup1020_noFZCZ(self):
+        """
+        Calculate the HUP 1020 montage and create the channel labels with FZ-CZ. Passes its data directly to the dataframe class.
+
+        Montage map:
+        FP01 - F07
+        F07  - T03
+        T03  - T05
+        T05  - O01
+        FP02 - F08
+        F08  - T04
+        T04  - T06
+        T06  - O02
+        FP01 - F03
+        F03  - C03
+        C03  - P03
+        P03  - O01
+        FP02 - F04
+        F04  - C04
+        C04  - P04
+        P04  - O02
+        """
+
+        # Channel structure for the montage
+        bipolar_array = [['FP01','F07'],
+                         ['F07','T03'],
+                         ['T03','T05'],
+                         ['T05','O01'],
+                         ['FP02','F08'],
+                         ['F08','T04'],
+                         ['T04','T06'],
+                         ['T06','O02'],
+                         ['FP01','F03'],
+                         ['F03','C03'],
+                         ['C03','P03'],
+                         ['P03','O01'],
+                         ['FP02','F04'],
+                         ['F04','C04'],
+                         ['C04','P04'],
+                         ['P04','O02'],]
+        
+        # Get the frequency array to reference and create the new output object
+        if self.pipeline_flag:
+            fs          = self.metadata[self.file_cntr]['fs']
+            self.new_fs = []
+
+        # Get the new values to pass to the dataframe class
+        montage_data = np.zeros((self.dataframe_to_montage.shape[0],len(bipolar_array))).astype('float64')
+        for ii,ival in enumerate(bipolar_array):
+
+            # Update the data array
+            try:
+                montage_data[:,ii] = self.dataframe_to_montage[ival[0]].values-self.dataframe_to_montage[ival[1]].values
+            except KeyError:
+                montage_data[:,ii] = np.nan
+
+            # Update the frequency
+            if self.pipeline_flag:
+                try:
+                    fs0 = fs[np.where(self.dataframe.columns==ival[0])[0][0]]
+                    fs1 = fs[np.where(self.dataframe.columns==ival[1])[0][0]]
+                    if fs0 == fs1:
+                        self.new_fs.append(fs0)
+                    else:
+                        raise ValueError("Cannot montage channels with different frequencies.")
+                except IndexError:
+                    self.new_fs.append(fs0)
+            
+        # Get the new montage channel labels
+        self.montage_channels = [f"{ichannel[0]}-{ichannel[1]}" for ichannel in bipolar_array]
+
+        # Pass the data to the dataframe class function for montages
+        return montage_data 
+
     def montage_neurovista(self):
         """
         TODO: add Neurovista montaging.

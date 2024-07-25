@@ -45,6 +45,11 @@ class mne_processing:
         self.mne_channels = mne_channels
         self.errors       = []
 
+        print(self.dataset)
+        print(np.unique(self.dataset['FZ']))
+        print(np.unique(self.dataset['CZ']))
+        exit()
+
         # Make sure that all of the frequencies match for mne
         if len(np.unique(fs)) == 1:
             self.fs = np.unique(fs)[0]
@@ -140,6 +145,10 @@ class mne_processing:
 
         # Exclude eye blinks
         ica.apply(raw_copy,exclude=np.where(eye_inds)[0],verbose=False)
+
+        iDF = PD.DataFrame(raw_copy.get_data().T,columns=self.ppchannels)
+        print(iDF.nunique())
+        exit()
         
         return PD.DataFrame(raw_copy.get_data().T,columns=self.ppchannels)
 

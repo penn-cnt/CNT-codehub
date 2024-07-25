@@ -70,6 +70,8 @@ class channel_mapping:
         # Logic for different mappings
         if self.channel_mapping.lower() == "hup1020":
             self.mapping_hup1020()
+        elif self.channel_mapping.lower() == "hup1020_nofzcz":
+            self.mapping_hup1020_noFZCZ()
         elif self.channel_mapping.lower() == "neurovista":
             self.mapping_neurovista()
 
@@ -79,6 +81,13 @@ class channel_mapping:
         """
 
         self.master_channel_list  = ['C03', 'C04', 'CZ', 'F03', 'F04', 'F07', 'F08', 'FZ', 'FP01', 'FP02', 'O01',
+                                    'O02', 'P03', 'P04', 'T03', 'T04', 'T05', 'T06']
+        self.channel_map_out      = np.array(np.intersect1d(self.clean_channel_map,self.master_channel_list))
+        self.channel_map_out_inds = np.where(np.isin(self.clean_channel_map, self.channel_map_out))[0]
+
+    def mapping_hup1020_noFZCZ(self):
+
+        self.master_channel_list  = ['C03', 'C04', 'F03', 'F04', 'F07', 'F08', 'FP01', 'FP02', 'O01',
                                     'O02', 'P03', 'P04', 'T03', 'T04', 'T05', 'T06']
         self.channel_map_out      = np.array(np.intersect1d(self.clean_channel_map,self.master_channel_list))
         self.channel_map_out_inds = np.where(np.isin(self.clean_channel_map, self.channel_map_out))[0]
