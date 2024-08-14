@@ -100,6 +100,7 @@ class iEEG_download(BIDS_handler):
         self.session_method_handler(0,1e6,annotation_flag=True)
 
         if self.success_flag:
+
             # Remove start clip time if it is just the machine starting up
             if self.clips[0].type.lower() == 'clip end' and self.clips[0].end_time_offset_usec == 2000:
                 self.clips = self.clips[1:]
@@ -110,6 +111,7 @@ class iEEG_download(BIDS_handler):
             if self.clips[-1].type.lower() == 'clip start':
                 self.clips = list(np.concatenate((self.clips,[self.end_time-self.start_time]), axis=0))
 
+            # Store the clip times in a simple list
             clip_vals = []
             for iclip in self.clips:
                 try:
