@@ -30,7 +30,7 @@ class YASA_processing:
 
     def get_sleep_stage(self):
 
-        raw = mne.io(self.data,self.channels) # Fix this
+        raw = mne.io(self.data,self.channels) # Fix this xx
  
 class FOOOF_processing:
 
