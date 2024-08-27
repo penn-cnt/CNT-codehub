@@ -5,6 +5,9 @@ import inspect
 import warnings
 import numpy as np
 import pandas as PD
+import mne
+import yasa
+from collections import Counter
 from tqdm import tqdm
 from fooof import FOOOF
 from scipy.integrate import simpson
@@ -24,13 +27,96 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class YASA_processing:
     
-    def __init__ (self,data,channels):
-        self.data     = data
+    def __init__(self, data, channels):
+        """
+        Initialize the YASA_processing class.
+
+        Args:
+            data (str): The EEG data in EDF format.
+            channels_to_include (list): List of channel names to include in the processing.
+        """
+        self.data = data
         self.channels = channels
 
-    def get_sleep_stage(self):
+    def common_average_montage(self, raw):
+        """
+        Apply common average montage to the EEG data.
 
-        raw = mne.io(self.data,self.channels) # Fix this xx
+        Args:
+            raw (mne.io.Raw): The raw EEG data.
+        
+        Returns:
+            raw (mne.io.Raw): The EEG data after applying the common average montage.
+        """
+        raw.pick_channels(self.channels_to_include)
+        raw.set_eeg_reference('average', projection=True)
+        raw.apply_proj()
+        return raw
+
+    def determine_consensus_stage(self, predicted_c3, predicted_cz, predicted_c4):
+        """
+        Determine the consensus stage based on stages from C3, C4, and Cz.
+
+        Args:
+            predicted_c3 (list): Predicted stages from C3.
+            predicted_cz (list): Predicted stages from Cz.
+            predicted_c4 (list): Predicted stages from C4.
+        
+        Returns:
+            consensus_stage (list): Consensus stages.
+        """
+        consensus_stage = []
+        for i in range(len(predicted_c3)):
+            stages = [predicted_c3[i], predicted_cz[i], predicted_c4[i]]
+            stage_counts = Counter(stages)
+            if stage_counts.most_common(1)[0][1] >= 2:  # Check if the most common stage appears at least twice
+                consensus_stage.append(stage_counts.most_common(1)[0][0])
+            else:
+                consensus_stage.append(np.nan)  # No consensus
+        return consensus_stage
+
+    def get_consensus_stages(self):
+        """
+        Process the EEG data and return the consensus stages.
+
+        Returns:
+            consensus_stage_list (list): List of consensus stages for each time point.
+        """
+        consensus_stage_list = []
+
+        try:
+            # Load the EEG data
+            raw = mne.io.read_raw_edf(self.edf_file_path, preload=True)
+
+            # Downsample the data to 100 Hz
+            raw.resample(100, npad="auto")
+            
+            # Apply bandpass filter from 0.4 to 30 Hz
+            raw.filter(l_freq=0.4, h_freq=30, fir_design='firwin')
+            
+            # Apply common average reference montage
+            raw = self.common_average_montage(raw)
+            
+            # Sleep staging for C3, Cz, and C4
+            sls_c3 = yasa.SleepStaging(raw, eeg_name="C3")
+            predicted_c3 = sls_c3.predict()
+
+            sls_cz = yasa.SleepStaging(raw, eeg_name="Cz")
+            predicted_cz = sls_cz.predict()
+
+            sls_c4 = yasa.SleepStaging(raw, eeg_name="C4")
+            predicted_c4 = sls_c4.predict()
+            
+            # Determine the consensus stage
+            consensus_stage = self.determine_consensus_stage(predicted_c3, predicted_cz, predicted_c4)
+            consensus_stage_list.append(consensus_stage)
+            
+        except Exception as e:
+            # In case of an error, append NaN to maintain the same length
+            print(f"Error processing file {self.edf_file_path}: {e}")
+            consensus_stage_list.append([np.nan])
+
+        return consensus_stage_list
  
 class FOOOF_processing:
 
