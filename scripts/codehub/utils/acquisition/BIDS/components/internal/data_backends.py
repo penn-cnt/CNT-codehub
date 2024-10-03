@@ -38,11 +38,13 @@ class MNE_handler:
                 self.make_info()
                 self.make_raw()
             else:
-                self.irow = None
+                self.iraw = None
                 self.bids_datatype = None
         except Exception as e:
             if self.args.debug:
                 print(f"Load error {e}")
+            self.iraw = None
+            self.bids_datatype = None
         
         # Return raw to the list of raws being tracked by the Subject class
         return self.iraw,self.bids_datatype
