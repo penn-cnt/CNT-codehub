@@ -549,62 +549,64 @@ class ieeg_handler(Subject):
             IndexError: If there are multiple sampling frequencies, bids does not readily support this. Alerts user and stops.
         """
 
-        with Session(self.args.username,self.password) as session:
-            
-            # Open dataset session
-            dataset = session.open_dataset(ieegfile)
-            
-            # Logic gate for annotation call (faster, no time data needed) or get actual data
-            if not annotation_flag:
+        if not annotation_flag:
+            # Status
+            print(f"Core {self.unique_id} is downloading {ieegfile} starting at {1e-6*start:011.2f} seconds for {1e-6*duration:08.2f} seconds.")
 
-                # Status
-                print(f"Core {self.unique_id} is downloading {ieegfile} starting at {1e-6*start:011.2f} seconds for {1e-6*duration:08.2f} seconds.")
+            # If duration is greater than 10 min, break up the call. Make array of start,duration with max 10 min each chunk
+            twin_min    = 10
+            time_cutoff = int(twin_min*60*1e6)
+            end_time    = start+duration
+            ival        = start
+            chunks      = []
+            while ival < end_time:
+                if ival+time_cutoff >= end_time:
+                    chunks.append([ival,end_time-ival])
+                else:
+                    chunks.append([ival,time_cutoff])
+                ival += time_cutoff
 
-                # Get the channel names and integer representations for data call
-                self.channels = dataset.ch_labels
-                channel_cntr  = list(range(len(self.channels)))
-
-                # If duration is greater than 10 min, break up the call. Make array of start,duration with max 10 min each chunk
-                twin_min    = 10
-                time_cutoff = int(twin_min*60*1e6)
-                end_time    = start+duration
-                ival        = start
-                chunks      = []
-                while ival < end_time:
-                    if ival+time_cutoff >= end_time:
-                        chunks.append([ival,end_time-ival])
-                    else:
-                        chunks.append([ival,time_cutoff])
-                    ival += time_cutoff
-
-                # Call data and concatenate calls if greater than 10 min
-                self.data    = []
-                self.logfile = ieegfile
-                for idx,ival in enumerate(chunks):
+            # Call data and concatenate calls if greater than 10 min
+            self.data    = []
+            self.logfile = ieegfile
+            for idx,ival in enumerate(chunks):
+                with Session(self.args.username,self.password) as session:
+                    
+                    # Open dataset session
+                    dataset = session.open_dataset(ieegfile)
+                
+                    # Get the channel names and integer representations for data call
+                    self.channels = dataset.ch_labels
+                    channel_cntr  = list(range(len(self.channels)))
                     self.logstart = ival[0]
                     self.logdur   = ival[1]
                     self.data.append(dataset.get_data(ival[0],ival[1],channel_cntr))
 
-                if len(self.data) > 1:
-                    self.data = np.concatenate(self.data)
-                else:
-                    self.data = self.data[0]
+                    # Get the samping frequencies
+                    self.fs = [dataset.get_time_series_details(ichannel).sample_rate for ichannel in self.channels]
 
-                # Apply the voltage factors
-                self.data = 1e-6*self.data
+                    # Data quality checks before saving
+                    if np.unique(self.fs).size == 1:
+                        self.fs = self.fs[0]
+                    else:
+                        raise Exception("Too many unique values for sampling frequency.")
+                session.close()
 
-                # Get the channel labels
-                self.channels = dataset.ch_labels
-
-                # Get the samping frequencies
-                self.fs = [dataset.get_time_series_details(ichannel).sample_rate for ichannel in self.channels]
-
-                # Data quality checks before saving
-                if np.unique(self.fs).size == 1:
-                    self.fs = self.fs[0]
-                else:
-                    raise Exception("Too many unique values for sampling frequency.")
+            # Make a single data array
+            if len(self.data) > 1:
+                self.data = np.concatenate(self.data)
             else:
+                self.data = self.data[0]
+
+            # Apply the voltage factors
+            self.data = 1e-6*self.data
+        else:
+            with Session(self.args.username,self.password) as session:
+
+                # Open dataset session
+                dataset = session.open_dataset(ieegfile)
+
+                # Get annotation info
                 self.raw_annotations = dataset.get_annotations(self.args.annot_layer)
                 print(self.raw_annotations)
                 if self.args.annotations:
