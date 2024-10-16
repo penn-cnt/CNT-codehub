@@ -592,6 +592,12 @@ class ieeg_handler(Subject):
                 self.channels = dataset.ch_labels
                 channel_cntr  = list(range(len(self.channels)))
 
+                # Create a channel mask if the user has a specific channel they want out
+                if self.args.channel != None:
+                    mask          = [ival==self.args.channel for ival in self.channels]
+                    self.channels = list(np.array(self.channels)[mask])
+                    channel_cntr  = list(np.array(channel_cntr)[mask])
+
                 # If duration is greater than 10 min, break up the call. Make array of start,duration with max 10 min each chunk
                 twin_min    = 10
                 time_cutoff = int(twin_min*60*1e6)
@@ -620,9 +626,6 @@ class ieeg_handler(Subject):
 
                 # Apply the voltage factors
                 self.data = 1e-6*self.data
-
-                # Get the channel labels
-                self.channels = dataset.ch_labels
 
                 # Get the samping frequencies
                 self.fs = [dataset.get_time_series_details(ichannel).sample_rate for ichannel in self.channels]
