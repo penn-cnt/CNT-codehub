@@ -2,7 +2,7 @@ import os
 import dearpygui.dearpygui as dpg
 
 # Local imports
-import pipeline_manager as PM
+import epipy as PM
 
 # Interface imports
 from EPIPY_modules.theme import applyTheme

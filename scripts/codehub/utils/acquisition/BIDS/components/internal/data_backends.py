@@ -14,9 +14,18 @@ def return_backend(user_request='MNE'):
 class backend_observer(Observer):
 
     def listen_data(self):
+        
+        # Send the data through the backend handler
         idata,itype = self.backend.workflow(self.args,self.data,self.channels,self.fs)
+
+        # Add objects to the shared list
         self.data_list.append(idata)
         self.type_list.append(itype)
+
+        # Clean up the memory space by removing the data
+        self.data     = None
+        self.channels = None
+        self.fs       = None
 
 class MNE_handler:
 
@@ -50,7 +59,8 @@ class MNE_handler:
         return self.iraw,self.bids_datatype
 
     def make_raw(self):
-        self.iraw = mne.io.RawArray(self.indata.T, self.data_info, verbose=False)
+        idata     = np.nan_to_num(self.indata.T, )
+        self.iraw = mne.io.RawArray(idata, self.data_info, verbose=False)
         self.iraw.set_channel_types(self.channel_types.type)
     
     def make_info(self):

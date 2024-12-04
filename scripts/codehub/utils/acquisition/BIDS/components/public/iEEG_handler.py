@@ -69,8 +69,8 @@ class ieeg_handler(Subject):
             self.multipull_manager()
 
         # Remove if debugging
-        if self.args.debug:
-            os.system(f"rm -r {self.args.bids_root}*")
+        #if self.args.debug:
+        #    os.system(f"rm -r {self.args.bids_root}*")
 
     def attach_objects(self):
         """
@@ -109,7 +109,8 @@ class ieeg_handler(Subject):
         semaphore = multiprocessing.Semaphore(1)
 
         # Create a load list for each cpu
-        all_inds = np.arange(input_args.shape[0])
+        all_inds     = np.arange(input_args.shape[0])
+        if self.args.randomize: np.random.shuffle(all_inds)
         split_arrays = np.array_split(all_inds, self.args.ncpu)
 
         # Start the multipull processing
@@ -123,15 +124,18 @@ class ieeg_handler(Subject):
         for process in processes:
             process.join()
 
-    def multipull(self,multiind,semaphore,writeout_freq=10):
+    def multipull(self,multiind,semaphore):
         """
         Handles a multithread data pull.
 
         Args:
             multiind (_type_): _description_
             semaphore (_type_): _description_
-            writeout_freq (int, optional): How many ieeg calls to make before saving out to disk. Defaults to 10.
         """
+
+        # Stagger the start of the multipull due to underlying iEEG concurrency issue
+        tsleep = np.fabs(np.random.normal(loc=10,scale=2))
+        time.sleep(tsleep)
 
         # Make a unique id for this core
         self.unique_id = uuid.uuid4()
@@ -140,11 +144,11 @@ class ieeg_handler(Subject):
         self.attach_objects()
 
         # Loop over the writeout frequency
-        niter = np.ceil(multiind.size/writeout_freq).astype('int')
+        niter = np.ceil(multiind.size/self.args.writeout_frequency).astype('int')
         for iwrite in range(niter):
             
             # Get the current indice slice
-            index_slice = multiind[iwrite*writeout_freq:(iwrite+1)*writeout_freq]
+            index_slice = multiind[iwrite*self.args.writeout_frequency:(iwrite+1)*self.args.writeout_frequency]
 
             # Determine what files to download and to where
             self.get_inputs(multiflag=True,multiinds=index_slice)
@@ -152,10 +156,16 @@ class ieeg_handler(Subject):
             # Begin downloading the data
             self.download_data_manager()
 
-            # Save the data
-            self.save_data()
-
+            # Hide disk i/o behind the semaphore. EDF writers sometimes access the same reference file for different runs
             with semaphore:
+                # Save the data
+                self.save_data()
+
+                # Reset the data and type lists
+                self.data_list = []
+                self.type_list = []
+
+                # Update the data records
                 self.get_data_record()
                 self.new_data_record = PD.concat((self.data_record,self.new_data_record))
                 self.new_data_record = self.new_data_record.drop_duplicates()
@@ -421,7 +431,8 @@ class ieeg_handler(Subject):
             # Download the data
             if self.args.annotations:
                 self.download_data(self.ieeg_files[idx],0,0,True)
-                self.annotation_cleanup(self.ieeg_files[idx],self.uid_list[idx],self.subject_list[idx],self.session_list[idx],self.target_list[idx])
+                if self.success_flag:
+                    self.annotation_cleanup(self.ieeg_files[idx],self.uid_list[idx],self.subject_list[idx],self.session_list[idx],self.target_list[idx])
             else:
                 # If-else around if the data already exists in our records. Add a skip to the data list if found to maintain run order.
                 if DE.check_default_records(self.ieeg_files[idx],1e-6*self.start_times[idx],1e-6*self.durations[idx]):
@@ -438,9 +449,11 @@ class ieeg_handler(Subject):
                         self.notify_data_observers()
                     else:
                         self.data_list.append(None)
+                        self.type_list.append(None)
                 else:
                     print(f"Skipping {self.ieeg_files[idx]} starting at {1e-6*self.start_times[idx]:011.2f} seconds for {1e-6*self.durations[idx]:08.2f} seconds.")
                     self.data_list.append(None)
+                    self.type_list.append(None)
 
         # If downloading by annotations, now loop over the clip level info and save
         if self.args.annotations:
@@ -464,9 +477,11 @@ class ieeg_handler(Subject):
                         self.notify_data_observers()
                     else:
                         self.data_list.append(None)
+                        self.type_list.append(None)
                 else:
                     print(f"Skipping {self.ieeg_files[idx]} starting at {1e-6*self.start_times[idx]:011.2f} seconds for {1e-6*self.durations[idx]:08.2f} seconds.")
                     self.data_list.append(None)
+                    self.type_list.append(None)
 
     def save_data(self):
         """
@@ -485,8 +500,8 @@ class ieeg_handler(Subject):
 
                 # Update keywords
                 self.keywords = {'filename':self.ieeg_files[idx],'root':self.args.bids_root,'datatype':self.type_list[idx],
-                                 'session':self.session_list[idx],'subject':self.subject_list[idx],'run':self.run_list[idx],
-                                 'task':'rest','fs':iraw.info["sfreq"],'start':istart,'duration':iduration,'uid':self.uid_list[idx]}
+                                'session':self.session_list[idx],'subject':self.subject_list[idx],'run':self.run_list[idx],
+                                'task':'rest','fs':iraw.info["sfreq"],'start':istart,'duration':iduration,'uid':self.uid_list[idx]}
                 self.notify_metadata_observers()
 
                 # Save the data
@@ -494,6 +509,21 @@ class ieeg_handler(Subject):
                     success_flag = self.BH.save_data_w_events(iraw, debug=self.args.debug)
                 else:
                     success_flag = self.BH.save_data_wo_events(iraw, debug=self.args.debug)
+
+                # Check if its all zero data if we failed
+                if not success_flag and self.args.zero_bad_data:
+                    
+                    # Store the meta data for this raw to copy to the new zeroed out data
+                    newinfo = iraw.info
+                    newchan = dict(map(lambda i,j : (i,j) , iraw.ch_names,iraw.get_channel_types()))
+                    idata   = 0*iraw.get_data()
+                    
+                    # Make a new zero mne object
+                    newraw = mne.io.RawArray(idata,newinfo, verbose=False)
+                    newraw.set_channel_types(newchan)
+
+                    # Try to save the zero data
+                    success_flag = self.BH.save_raw_edf(newraw,self.type_list[idx],debug=self.args.debug)
 
                 # If the data wrote out correctly, update the data record
                 if success_flag:
@@ -524,11 +554,19 @@ class ieeg_handler(Subject):
                     self.success_flag = True
                     break
                 except (IIA.IeegConnectionError,IIA.IeegServiceError,TimeoutException,RTIMEOUT,TypeError) as e:
+                    # Get more info through debug
+                    if self.args.debug:
+                        print(f"Failed on {self.logfile} at {self.logstart} for {self.logdur}.")
+
                     if n_attempts<n_retry:
                         sleep(5)
                         n_attempts += 1
                     else:
                         print(f"Connection Error: {e}")
+                        if self.args.connection_error_folder != None:
+                            fp = open(f"{self.args.connection_error_folder}{self.unique_id}.errors","a")
+                            fp.write(f"{e}\n")
+                            fp.close()
                         break
 
     def ieeg_session(self,ieegfile,start,duration,annotation_flag):
@@ -556,11 +594,13 @@ class ieeg_handler(Subject):
                 print(f"Core {self.unique_id} is downloading {ieegfile} starting at {1e-6*start:011.2f} seconds for {1e-6*duration:08.2f} seconds.")
 
                 # Get the channel names and integer representations for data call
-                self.channels = dataset.ch_labels
-                channel_cntr  = list(range(len(self.channels)))
+                self.channels  = dataset.ch_labels
+                channel_cntr   = list(range(len(self.channels)))
+                nchan_win      = 50
+                channel_chunks = [channel_cntr[i:i+nchan_win] for i in range(0, len(channel_cntr), nchan_win)] 
 
                 # If duration is greater than 10 min, break up the call. Make array of start,duration with max 10 min each chunk
-                twin_min    = 10
+                twin_min    = self.args.download_time_window
                 time_cutoff = int(twin_min*60*1e6)
                 end_time    = start+duration
                 ival        = start
@@ -573,9 +613,19 @@ class ieeg_handler(Subject):
                     ival += time_cutoff
 
                 # Call data and concatenate calls if greater than 10 min
-                self.data   = []
-                for ival in chunks:
-                    self.data.append(dataset.get_data(ival[0],ival[1],channel_cntr))
+                self.data    = []
+                self.logfile = ieegfile
+                for idx,ival in enumerate(chunks):
+                    self.logstart = ival[0]
+                    self.logdur   = ival[1]
+                    for chunk_cntr,ichunk in enumerate(channel_chunks):
+                        if chunk_cntr == 0:
+                            idata = dataset.get_data(ival[0],ival[1],ichunk)
+                        else:
+                            tmp   = dataset.get_data(ival[0],ival[1],ichunk)
+                            idata = np.hstack((idata,tmp))
+                    self.data.append(idata)
+
                 if len(self.data) > 1:
                     self.data = np.concatenate(self.data)
                 else:
@@ -596,8 +646,9 @@ class ieeg_handler(Subject):
                 else:
                     raise Exception("Too many unique values for sampling frequency.")
             else:
-                self.clips           = dataset.get_annotations(self.args.time_layer)
                 self.raw_annotations = dataset.get_annotations(self.args.annot_layer)
+                if self.args.annotations:
+                    self.clips = dataset.get_annotations(self.args.time_layer)
                 self.ieeg_start_time = dataset.start_time
                 self.ieeg_end_time   = dataset.end_time
             session.close()

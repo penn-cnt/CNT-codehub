@@ -49,8 +49,8 @@ class jar_handler(Subject):
         self.new_data_record.to_csv(self.data_record_path,index=False)
 
         # Remove if debugging
-        if self.args.debug:
-            os.system(f"rm -r {self.args.bids_root}*")
+        #if self.args.debug:
+        #    os.system(f"rm -r {self.args.bids_root}*")
 
     def attach_objects(self):
         """

@@ -1,8 +1,11 @@
+import os
 import time
 import getpass
 import pickle
 import numpy as np
 import pandas as PD
+from mne import Annotations
+from mne.export import export_raw
 from mne_bids import BIDSPath,write_raw_bids
 
 # Local Imports
@@ -39,6 +42,8 @@ class BIDS_observer(Observer):
                 if key in ['start','duration']:
                     if value == None:
                         newval = "None"
+                elif key in ['run']:
+                    newval = int(value)
             return newval
 
         # Define the required BIDS keywords
@@ -55,10 +60,14 @@ class BIDS_observer(Observer):
             # Update the bids path
             self.BH.update_path(self.BIDS_keywords)
 
-            if self.args.include_annotation or self.args.annotations:
-                # Update the events
-                self.BH.create_events(self.keywords['filename'],int(self.keywords['run']),
-                                    self.keywords['fs'],self.annotations)
+            # See if there are annotation argument flags
+            try:
+                if self.args.include_annotation or self.args.annotations:
+                    # Update the events
+                    self.BH.create_events(self.keywords['filename'],int(self.keywords['run']),
+                                        self.keywords['fs'],self.annotations)
+            except AttributeError:
+                pass
         else:
             print(f"Unable to create BIDS keywords for file: {self.keywords['filename']}.")
             print(f"{self.BIDS_keywords}")
@@ -93,11 +102,11 @@ class BIDS_handler:
         for ii,iannot in enumerate(annotations[ifile][run].keys()):
             
             # Get the raw annotation and the index
-            desc  = annotations[ifile][run][iannot]
+            desc  = str(annotations[ifile][run][iannot])
             index = (1e-6*iannot)*fs
 
             # Make the required mne event mapper
-            self.event_mapping[str(iannot)] = ii
+            self.event_mapping[desc] = ii
 
             # Store the results
             events.append([index,0,ii])
@@ -124,7 +133,7 @@ class BIDS_handler:
 
         # Save the bids data
         try:
-            write_raw_bids(bids_path=self.bids_path, raw=raw, events_data=self.events,event_id=self.event_mapping, allow_preload=True, format='EDF', overwrite=True, verbose=False)
+            write_raw_bids(bids_path=self.bids_path, raw=raw, events=self.events,event_id=self.event_mapping, allow_preload=True, format='EDF', overwrite=True, verbose=False)
             return True
         except Exception as e:
             if debug:
@@ -145,12 +154,40 @@ class BIDS_handler:
 
         # Save the bids data
         try:
-            write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False)
+            write_raw_bids(bids_path=self.bids_path, raw=raw, allow_preload=True, format='EDF',verbose=False,overwrite=True)
             return True
         except Exception as e:
             if debug:
-                print(f"Write error: {e}")
+                print(f"Bids write error: {e}")
             return False
+
+    def save_raw_edf(self,raw,itype,pmin=0,pmax=1,debug=False):
+        """
+        If data is all zero, try to just write out the all zero timeseries data.
+
+        Args:
+            raw (_type_): _description_
+            debug (bool, optional): _description_. Defaults to False.
+        """
+
+        try:
+            export_raw(str(self.bids_path)+f"_{itype}.edf",raw=raw,fmt='edf',physical_range=(pmin,pmax),overwrite=True,verbose=False)
+            return True
+        except Exception as e:
+            if debug:
+                print("Raw write error: {e}")
+            return False
+        
+    def copy_raw_edf(self,original_path,itype,debug=False):
+
+        try:
+            os.system(f"cp {original_path} {str(self.bids_path)}_{itype}.edf")
+            return True
+        except Exception as e:
+            if debug:
+                print("Raw copy error: {e}")
+            return False
+
 
     def make_records(self,source):
 

@@ -6,14 +6,25 @@ CNT Code Hub
 
 This code is designed to help with the processing of epilepsy datasets commonly used within the Center for Neuroengineering & Therapeutics (CNT) at the University of Pennsylvania. 
 
-This code is meant to be researcher driven, allowing new code libraries to be added to modules that represent common research tasks (i.e. Channel Cleaning, Montaging, Preprocessing, etc.). The code can be accessed both as independent libraries that can be called on for a range of tasks, or as part of a large framework meant to ingest, clean, and prepare data for analysis or deep-learning tasks.
+This code is meant to be researcher driven, allowing new code libraries to be added to modules that represent common research tasks (i.e. Channel Cleaning, Montaging, Preprocessing, Feature Extraction, etc.). The code can be accessed both as independent libraries that can be called on for a range of tasks, or as part of a large framework meant to ingest, clean, and prepare data for analysis or deep-learning tasks.
+
+We also provide a number of additional scripts to help with common/important tasks. A few of particular note are:
+- [Data Acquisition/BIDS Generation](https://github.com/penn-cnt/CNT-codehub/tree/main/scripts/codehub/utils/acquisition/BIDS)
+    - Creates local BIDS datasets from iEEG.org or converts local timeseries files to a BIDS format.
+- [Search Data Cache](https://github.com/penn-cnt/CNT-codehub/tree/main/scripts/codehub/utils/acquisition/SEARCH)
+    - Searches CNT data cache (across different servers) to find user requested data. Meant to reduce duplicate downloads.
+- [Time Series Viewer/Annnotator](https://github.com/penn-cnt/CNT-codehub/tree/main/scripts/codehub/utils/visualization/edf_viewer)
+    - View and annotate timeseries files locally.
 
 For more information on how to use our code, please see the examples folder for specific use-cases and common practices.
 
-# Prerequisites
-In order to use this repository, you must have access to Python 3+. You must also have access to conda 23.+ if building environments from yaml files.
 
 # Installation
+
+## Prerequisites
+In order to use this repository, you must have access to Python 3+. You must also have access to conda 23.+ if building environments from yaml files.
+
+## Using Conda
 
 An environment file with all the needed packages to run this suite of code can be found at the following location:
 
@@ -39,17 +50,38 @@ The environment is then activated by running:
 
 More information about creating conda environments can be found [here](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
 
-## Adding the codehub to your python paths
+### Adding the codehub to your conda environment paths
 
 You will likely need to add this package to your python path to ensure full functionality of utility scripts and the main pipeline. To do so using anaconda, you can run:
 
 > conda develop <path-to-git-head>/scripts/codehub/
 
+## Using venv and pip
+
+To create a virtual environment, you need to create a location for the environment to install to. For this example, we will specify `/demonstration/environment/cnt_codehub` as our environment location. Using the python version of your choice, in this example we will select 3.10, run the following command:
+
+> python3.10 -m venv /demonstration/environment/cnt_codehub
+
+to create a new virtual environment. To enter the envrionment, simply run:
+
+> source /demonstration/environment/cnt_codehub/bin/activate
+
+**NOTE:** To streamline the process, we recommend making an alias command to avoid having to navigate the the activate file everytime.
+
+Once in the environment, a requirements.txt file with all the needed packages to run this suite of code can be found at the following location:
+
+> [CNT Codehub YAML](core_libraries/python/cnt_codehub/envs/requirements.txt)
+
+This file can be installed using the following call to pip from the envs subdirectory:
+
+> pip install -r requirements.txt
+
+which will install everything to your current virual environment. 
+
+### Adding the codehub to your virtual environment path
 For a virtual environment, an easy way to add `<path-to-git-head>/scripts/codehub/` to your path would be to add a text file with a .pth extention (any filename is fine) to the site-packages subfolder in your virtual environment folder. Within the text file you can just copy and paste the absolute path as the only contents.
 
-## Installation using venv
-
-To be added soon.
+Typically, the path your your site-packages can be found at: `<path-to-environment-folder>/lib/python<version-number>/site-packages`.
 
 # Documentation
 

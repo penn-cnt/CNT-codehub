@@ -57,7 +57,7 @@ class mne_processing:
         mapping = yaml.safe_load(open(config_path,'r'))
         persistance_dict['mne_mapping'] = mapping
 
-    @silence_mne_warnings
+    # @silence_mne_warnings
     def eyeblink_removal(self,config_path,n_components=None,max_iter=1000):
         """
         Remove eyeblinks from the data.
@@ -71,10 +71,6 @@ class mne_processing:
             _type_: _description_
         """
 
-        # Set components if needed
-        if n_components == None:
-            n_components = len(self.ppchannels)
-
         # Make sure that the config file can be found. Easy to forget since it is given by a config file.
         if not os.path.exists(config_path):
             print(f"Unable to find {config_path}.")
@@ -84,7 +80,7 @@ class mne_processing:
                 raise FileNotFoundError("No valid MNE channel configuration file provided. Quitting.")
 
         # Get the channel mappings in mne compliant form
-        if 'mne_mspping' not in persistance_dict.keys():
+        if 'mne_mapping' not in persistance_dict.keys():
             self.make_montage_object(config_path)
         mapping      = persistance_dict['mne_mapping']
         mapping_keys = list(mapping.keys())
@@ -95,19 +91,28 @@ class mne_processing:
             else:
                 ch_types.append('eeg')
 
-        # Create the mne montage
-        info         = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
+        # Create the raw mne object and set the reference
+        info    = mne.create_info(self.ppchannels, self.fs, ch_types=ch_types,verbose=False)
+        raw     = mne.io.RawArray(self.dataset.T, info,verbose=False)
+
+        # Set the montage
         montage      = mne.channels.make_standard_montage("standard_1020")
         mne_chan_map = dict(zip(montage.ch_names,self.mne_channels))
         montage.rename_channels(mne_chan_map)
-        persistance_dict['mne_montage'] = (info,montage)
-
-        # Create the raw mne object and set the montages
-        raw = mne.io.RawArray(self.dataset.T, info,verbose=False)
         raw.set_montage(montage)
 
+        # Set the right reference for eyeblink removal
+        raw = raw.set_eeg_reference(verbose=False)
+
+        # Apply the minimum needed filter for eyeblink removal
+        raw = raw.filter(1,100,verbose=False)
+
         # Create the ICA object and fit
-        ica = ICA(n_components=n_components, random_state=42, max_iter=max_iter,verbose=False)
+        if n_components == None:
+            nc = len(ch_types)-1
+        else:
+            nc = n_components
+        ica = ICA(n_components=nc, method='infomax', fit_params=dict(extended=True), random_state=42, max_iter=max_iter,verbose=False)
         ica.fit(raw,verbose=False)
 
         # Get the ica labels. Have to wrap it since MNE has random print statements we cant silence easily

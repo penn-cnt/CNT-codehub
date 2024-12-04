@@ -1,6 +1,7 @@
 import os 
 import time
 import getpass
+from tqdm import tqdm
 from mne.io import read_raw_edf
 
 # Local import
@@ -24,8 +25,6 @@ class edf_handler(Subject):
         self.get_data_record()
 
         # Create objects that interact with observers
-        self.data_list     = []
-        self.type_list     = []
         self.BIDS_keywords = {'root':self.args.bids_root,'datatype':None,'session':None,'subject':None,'run':None,'task':None}
 
     def workflow(self):
@@ -39,19 +38,29 @@ class edf_handler(Subject):
         # Determine how to save the data
         self.get_inputs()
 
-        # Begin downloading the data
-        self.load_data_manager()
+        # Loop over the files individually for edf files. This option has to handle large files.
+        for fidx in range(len(self.edf_files)):
 
-        # Save the data
-        self.save_data()
+            # Create objects to store info
+            self.data_list     = []
+            self.type_list     = []
 
-        # Save the data record
-        self.new_data_record = self.new_data_record.sort_values(by=['subject_number','session_number','run_number'])
-        self.new_data_record.to_csv(self.data_record_path,index=False)
+            # Begin downloading the data
+            self.load_data_manager(fidx)
+
+            # Save the data
+            self.save_data(fidx)
+
+            # Update the data records
+            self.get_data_record()
+            self.new_data_record = PD.concat((self.data_record,self.new_data_record))
+            self.new_data_record = self.new_data_record.drop_duplicates()
+            self.new_data_record = self.new_data_record.sort_values(by=['subject_number','session_number','run_number'])
+            self.new_data_record.to_csv(self.data_record_path,index=False)
 
         # Remove if debugging
-        if self.args.debug:
-            os.system(f"rm -r {self.args.bids_root}*")
+        #if self.args.debug:
+        #    os.system(f"rm -r {self.args.bids_root}*")
 
     def attach_objects(self):
         """
@@ -71,9 +80,6 @@ class edf_handler(Subject):
         Create the input objects that track what files and times to download, and any relevant keywords for the BIDS process.
         For single core pulls, has more flexibility to set parameters. For multicore, we restrict it to a pre-built input_args.
         """
-
-        # Make sure we have some required inputs
-
 
         # Check for an input csv to manually set entries
         if self.args.input_csv != None:
@@ -166,7 +172,7 @@ class edf_handler(Subject):
         else:
             self.data_record = PD.DataFrame(columns=['orig_filename','source','creator','gendate','uid','subject_number','session_number','run_number','start_sec','duration_sec'])   
 
-    def load_data_manager(self):
+    def load_data_manager(self,file_cntr):
         """
         Loop over the ieeg file list and download data. If annotations, does a first pass to get annotation layers and times, then downloads.
         """
@@ -174,32 +180,31 @@ class edf_handler(Subject):
         # Load the data exists exception handler so we can avoid already downloaded data.
         DE = DataExists(self.data_record)
 
-        # Loop over the requested data
-        for idx in range(len(self.edf_files)):
+        # Check if we have a specific set of times for this file
+        try:
+            istart    = self.start_times[file_cntr]
+            iduration = self.durations[file_cntr]
+        except TypeError:
+            istart    = None
+            iduration = None
 
-            # Check if we have a specific set of times for this file
-            try:
-                istart    = self.start_times[idx]
-                iduration = self.durations[idx]
-            except TypeError:
-                istart    = None
-                iduration = None
-
-            if DE.check_default_records(self.edf_files[idx],istart,iduration):
-                self.load_data(self.edf_files[idx])
-                        
-                # If successful, notify data observer. Else, add a skip
-                if self.success_flag:
-                    self.notify_data_observers()
-                else:
-                    self.data_list.append(None)
+        if DE.check_default_records(self.edf_files[file_cntr],istart,iduration):
+            self.load_data(self.edf_files[file_cntr])
+                    
+            # If successful, notify data observer. Else, add a skip
+            if self.success_flag:
+                self.notify_data_observers()
             else:
-                print(f"Skipping {self.edf_files[idx]}.")
                 self.data_list.append(None)
+                self.type_list.append(None)
+        else:
+            print(f"Skipping {self.edf_files[file_cntr]}.")
+            self.data_list.append(None)
+            self.type_list.append(None)
 
     def load_data(self,infile):
         try:
-            raw               = read_raw_edf(infile,verbose=False)
+            raw = read_raw_edf(infile,verbose=False)
             self.data         = raw.get_data().T
             self.channels     = raw.ch_names
             self.fs           = raw.info.get('sfreq')
@@ -209,7 +214,7 @@ class edf_handler(Subject):
             if self.args.debug:
                 print(f"Load error {e}")
 
-    def save_data(self):
+    def save_data(self,fidx):
         """
         Notify the BIDS code about data updates and save the results when possible.
         """
@@ -222,27 +227,31 @@ class edf_handler(Subject):
                 # Define start time and duration. Can differ for different filetypes
                 # May not exist for a raw edf transfer, so add a None outcome.
                 try:
-                    istart    = self.start_times[idx]
-                    iduration = self.durations[idx]
+                    istart    = self.start_times[fidx]
+                    iduration = self.durations[fidx]
                 except TypeError:
                     istart    = None
                     iduration = None
 
                 # Update keywords
-                self.keywords = {'filename':self.edf_files[idx],'root':self.args.bids_root,'datatype':self.type_list[idx],
-                                 'session':self.session_list[idx],'subject':self.subject_list[idx],'run':self.run_list[idx],
-                                 'task':'rest','fs':iraw.info["sfreq"],'start':istart,'duration':iduration,'uid':self.uid_list[idx]}
+                self.keywords = {'filename':self.edf_files[fidx],'root':self.args.bids_root,'datatype':self.type_list[idx],
+                                 'session':self.session_list[fidx],'subject':self.subject_list[fidx],'run':self.run_list[fidx],
+                                 'task':'rest','fs':iraw.info["sfreq"],'start':istart,'duration':iduration,'uid':self.uid_list[fidx]}
                 self.notify_metadata_observers()
 
                 # Save the data without events until a future release
-                print(f"Converting {self.edf_files[idx]} to BIDS...")
+                print(f"Converting {self.edf_files[fidx]} to BIDS...")
                 success_flag = self.BH.save_data_wo_events(iraw, debug=self.args.debug)
+
+                if not success_flag and self.args.copy_edf:
+                    print(f"Copying {self.edf_files[fidx]} to BIDS...")
+                    success_flag = self.BH.copy_raw_edf(self.edf_files[fidx],self.type_list[idx],debug=self.args.debug)
 
                 # If the data wrote out correctly, update the data record
                 if success_flag:
                     # Save the target info
                     try:
-                        self.BH.save_targets(self.target_list[idx])
+                        self.BH.save_targets(self.target_list[fidx])
                     except:
                         pass
                     
@@ -265,7 +274,7 @@ class edf_handler(Subject):
                 raise Exception("Please provide a --session_number to the input csv.")
             if 'run_number' not in input_cols:
                 raise Exception("Please provide a --run_number to the input csv.")
-            if 'uid_number' not in input_cols:
+            if 'uid' not in input_cols:
                 raise Exception("Please provide a --uid_number to the input csv.")
         else:
             if args.subject_number == None:

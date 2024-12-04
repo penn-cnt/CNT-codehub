@@ -9,9 +9,6 @@ from functools import partial
 from mne.io import read_raw_edf
 from pyedflib.highlevel import read_edf_header
 
-# CNT/EEG Specific
-from ieeg.auth import Session
-
 # Component imports
 from components.metadata.public.metadata_handler import *
 

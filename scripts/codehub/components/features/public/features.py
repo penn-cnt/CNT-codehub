@@ -1,12 +1,15 @@
 import os
 import ast
 import sys
+import mne
+import yasa
 import inspect
 import warnings
 import numpy as np
 import pandas as PD
 from tqdm import tqdm
 from fooof import FOOOF
+from scipy.stats import mode
 from scipy.integrate import simpson
 from scipy.signal import welch, find_peaks, detrend
 from neurodsp.spectral import compute_spectrum_welch
@@ -20,17 +23,75 @@ global persistance_dict
 persistance_dict = {}
 
 # Ignore FutureWarnings. Pandas is giving a warning for concat. But the data is not zero. Might be due to a single channel of all NaNs.
+from sklearn.exceptions import InconsistentVersionWarning
 warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=InconsistentVersionWarning)
 
 class YASA_processing:
     
-    def __init__ (self,data,channels):
-        self.data     = data
-        self.channels = channels
+    def __init__ (self,data,channels,fs):
+        self.data        = data
+        self.channels    = channels
+        self.fs          = fs
 
-    def get_sleep_stage(self):
+    def make_montage_object(self,config_path):
 
-        raw = mne.io(self.data,self.channels) # Fix this
+        #Create the mne channel types
+        mapping = yaml.safe_load(open(config_path,'r'))
+        persistance_dict['mne_mapping'] = mapping
+
+    def make_raw_object(self,config_path):
+
+        # Get the channel mappings in mne compliant form
+        if 'mne_mapping' not in persistance_dict.keys():
+            self.make_montage_object(config_path)
+        mapping      = persistance_dict['mne_mapping']
+        mapping_keys = list(mapping.keys())
+
+        # Assign the mapping to each channel
+        ch_types     = []
+        for ichannel in self.channels:
+            if ichannel in mapping_keys:
+                ch_types.append(mapping[ichannel])
+            else:
+                ch_types.append('eeg')
+
+        # Create the raw mne object and set the reference
+        info     = mne.create_info(self.channels, self.fs, ch_types=ch_types,verbose=False)
+        self.raw = mne.io.RawArray(self.data.T, info, verbose=False)
+
+    def yasa_sleep_stage(self,config_path,consensus_channels=['CZ','C03','C04']):
+
+        # Make the raw object for YASA to work with
+        self.make_raw_object(config_path)
+
+        # Set the right reference for eyeblink removal (CAR by default)
+        self.raw = self.raw.set_eeg_reference('average',verbose=False)
+
+        # Apply the minimum needed filter for eyeblink removal
+        self.raw = self.raw.filter(0.5,30,verbose=False)
+
+        # Resample down to 100 HZ
+        self.raw = self.raw.resample(100)
+
+        # Get the yasa prediction
+        results = []
+        for ichannel in consensus_channels:
+            sls = yasa.SleepStaging(self.raw, eeg_name=ichannel)
+            results.append(list(sls.predict()))
+        results = np.array(results)
+
+        # Get the epipy formatted output
+        output = ''
+        for irow in results.T:
+            output += ','.join(irow)
+            output += '|'
+        output = output[:-1]
+
+        # Make the optional string. In this case, the consensus channel list
+        optional_str = ','.join(consensus_channels)
+        
+        return output,optional_str
  
 class FOOOF_processing:
 
@@ -244,7 +305,49 @@ class signal_processing:
             return spectral_energy,self.optional_tag
         else:
             return spectral_energy,self.optional_tag,(['freqs','psd_welch'],frequencies.astype('float16'),psd.astype('float32'))
-    
+
+    def normalized_spectral_energy_welch(self, low_freq=-np.inf, hi_freq=np.inf, win_size=2., win_stride=1.):
+        """
+        Returns the spectral energy using the Welch method.
+
+        Args:
+            low_freq (float, optional): Low frequency cutoff. Defaults to -np.inf.
+            hi_freq (float, optional): High frequency cutoff. Defaults to np.inf.
+            win_size (float, optional): Window size in units of sampling frequency. Defaults to 2.
+            win_stride (float, optional): Window overlap in units of sampling frequency. Defaults to 1.
+
+        Returns:
+            spectral_energy (float): Spectral energy within the frequency band.
+            optional_tag (string): Unique identifier that is added to the output dataframe to show the frequency window for which a welch spectral energy was calculated.
+            (frequencies,psd): If trace is enabled for this pipeline, return the frequencies and psd for this channel for testing.
+        """
+
+        # Add in the optional tagging to denote frequency range of this step
+        low_freq_str      = f"{low_freq:.2f}"
+        hi_freq_str       = f"{hi_freq:.2f}"
+        self.optional_tag = '['+low_freq_str+','+hi_freq_str+']'
+
+        # Get the number of samples in each window for welch average and the overlap
+        nperseg = int(float(win_size) * self.fs)
+        noverlap = int(float(win_stride) * self.fs)
+
+        # Calculate the welch periodogram
+        frequencies, initial_power_spectrum = welch(x=self.data.reshape((-1,1)), fs=self.fs, nperseg=nperseg, noverlap=noverlap, axis=0)
+        initial_power_spectrum              = initial_power_spectrum.flatten()
+        inds                                = (frequencies>=0.5)&np.isfinite(initial_power_spectrum)&(initial_power_spectrum>0)
+        freqs                               = frequencies[inds]
+        initial_power_spectrum              = initial_power_spectrum[inds]
+        psd                                 = np.interp(frequencies,freqs,initial_power_spectrum)
+
+        # Calculate the spectral energy
+        mask            = (frequencies >= low_freq) & (frequencies <= hi_freq)
+        spectral_energy = np.trapz(psd[mask], frequencies[mask])/np.trapz(psd, frequencies)
+
+        if not self.trace:
+            return spectral_energy,self.optional_tag
+        else:
+            return spectral_energy,self.optional_tag,(['freqs','psd_welch'],frequencies.astype('float16'),psd.astype('float32'))
+
     def topographic_peaks(self,prominence_height,min_width,height_unit='zscore',width_unit='seconds',detrend_flag=False):
         """
         Find the topographic peaks in channel data. This is a naive/fast way of finding spikes or slowing.
@@ -392,6 +495,9 @@ class features:
         in the output data container.
         """
 
+        # Define the classes that only need to process the data once. (i.e. Use all channels, cannot go channel-wise.)
+        avoid_reprocessing_classes = ['YASA_processing']
+
         # Initialize some variables
         channels  = self.montage_channels.copy()
         outcols   = ['file','t_start','t_end','t_window','method','tag']+channels
@@ -431,7 +537,8 @@ class features:
                         fs = imeta['fs']
 
                         # Loop over the channels and get the updated values
-                        output = [] 
+                        output         = []
+                        reprocess_flag = True
                         for ichannel in range(dataset.shape[1]):
 
                             for key, value in method_args.items():
@@ -455,15 +562,19 @@ class features:
                                 if cls.__name__ == 'FOOOF_processing':
                                     namespace = cls(idata,fs[ichannel],[0.5,32], imeta['file'], idx, ichannel, self.args.trace)
                                 elif cls.__name__ == 'YASA_processing':
-                                    namespace = cls(dataset,channels)
+                                    namespace = cls(dataset,channels,fs[ichannel])
                                 else:
                                     namespace = cls(idata,fs[ichannel],self.args.trace)
 
-                                # Get the method name and return results from the method
-                                method_call = getattr(namespace,method_name)
-                                results     = method_call(**method_args)
-                                result_a    = results[0]
-                                result_b    = results[1]
+                                if reprocess_flag:
+                                    # Get the method name and return results from the method
+                                    method_call = getattr(namespace,method_name)
+                                    results     = method_call(**method_args)
+                                    result_a    = results[0]
+                                    result_b    = results[1]
+
+                                    # Check if we can avoid reprocessing this feature step
+                                    if cls.__name__ in avoid_reprocessing_classes: reprocess_flag=False
 
                                 # If the user wants to trace some values (see the results as they are processed), they can return result_c
                                 if len(results) == 3:
@@ -487,11 +598,14 @@ class features:
                                 # Add the results to the output object
                                 output.append(result_a)
 
-                            except Exception as e:
+                            except OSError: #Exception as e:
 
                                 # Add the ability to see the error if debugging
                                 if self.args.debug and not self.args.silent:
-                                    print(f"Error {e} in step {istep} in {imeta['file']}.")
+                                    fname       = os.path.split(sys.exc_info()[2].tb_frame.f_code.co_filename)[1]
+                                    error_type  = sys.exc_info()[0]
+                                    line_number = sys.exc_info()[2].tb_lineno
+                                    print(f"Error {error_type} in line {line_number}.")
 
                                 # We need a flexible solution to errors, so just populating a nan value
                                 output.append(None)

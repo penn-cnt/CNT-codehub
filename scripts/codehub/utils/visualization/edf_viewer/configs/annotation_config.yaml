@@ -1,0 +1,25 @@
+sleep_state:
+    options:
+        - 'awake'
+        - 'sleep'
+        - unknown
+spikes:
+    options:
+        - 'yes'
+        - 'no'
+        - unknown
+seizures:
+    options:
+        - 'yes'
+        - 'no'
+        - unknown
+slowing:
+    options:
+        - 'yes'
+        - 'no'
+        - unknown
+artifact:
+    options:
+        - 'yes'
+        - 'no'
+        - unknown

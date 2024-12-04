@@ -16,6 +16,7 @@ allowed_channel_args:
     NEUROVISTA: Channels for NeuroVista data.
     RAW: Use all possible channels. Warning, channels may not match across different datasets.
 allowed_montage_args:
+    NONE: No montage.
     HUP1020: Use a 10-20 montage.
     NEUROVISTA: Use a custom NeuroVista montage.
     COMMON_AVERAGE: Use a common average montage.

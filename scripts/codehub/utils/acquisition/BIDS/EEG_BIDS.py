@@ -2,9 +2,8 @@ import os
 import argparse
 import pandas as PD
 from sys import exit
-from prettytable import PrettyTable,ALL
 
-# Locale import
+# Local import
 from components.internal.BIDS_handler import *
 from components.public.edf_handler import edf_handler
 from components.public.iEEG_handler import ieeg_handler
@@ -64,10 +63,11 @@ if __name__ == '__main__':
     # Command line options needed to obtain data.
     parser = argparse.ArgumentParser(description="Make an EEG BIDS dataset from various sources. Also manages helper scripts for the CNT.")
 
-    source_group = parser.add_mutually_exclusive_group()
-    source_group.add_argument("--ieeg", action='store_true', default=False, help="iEEG data pull.")
-    source_group.add_argument("--edf", action='store_true', default=False, help="Raw edf data pull.")
-    source_group.add_argument("--jar", action='store_true', default=False, help="Convert jar file to EDF Bids.")
+    source_group = parser.add_argument_group('Data source options')
+    source_option_group = source_group.add_mutually_exclusive_group(required=True)
+    source_option_group.add_argument("--ieeg", action='store_true', default=False, help="iEEG data pull.")
+    source_option_group.add_argument("--edf", action='store_true', default=False, help="Raw edf data pull.")
+    source_option_group.add_argument("--jar", action='store_true', default=False, help="Convert jar file to EDF Bids.")
 
     data_group = parser.add_argument_group('Data configuration options')
     data_group.add_argument("--bids_root", type=str, required=True, default=None, help="Output directory to store BIDS data.")
@@ -84,6 +84,7 @@ if __name__ == '__main__':
     ieeg_group.add_argument("--time_layer", type=str, default='EEG clip times', help="Annotation layer name for clip times.")
     ieeg_group.add_argument("--annot_layer", type=str, default='Imported Natus ENT annotations', help="Annotation layer name for annotation strings.")
     ieeg_group.add_argument("--timeout", type=int, default=60, help="Timeout interval for ieeg.org calls")
+    ieeg_group.add_argument("--download_time_window", type=int, default=10, help="The length of data to pull from iEEG.org for subprocess calls (in minutes). For high frequency, many channeled data, consider lowering. ")
 
     bids_group = parser.add_argument_group('BIDS keyword options')
     bids_group.add_argument("--uid_number", type=str, help="Unique identifier string to use when not referencing a input_csv file. Only used for single data pulls. Can be used to map the same patient across different datasets to something like an MRN behind clinical firewalls.")
@@ -95,6 +96,7 @@ if __name__ == '__main__':
     multithread_group = parser.add_argument_group('Multithreading Options')
     multithread_group.add_argument("--multithread", action='store_true', default=False, help="Multithreaded download.")
     multithread_group.add_argument("--ncpu", default=1, type=int, help="Number of CPUs to use when downloading.")
+    multithread_group.add_argument("--writeout_frequency", default=10, type=int, help="How many files to download before writing out results and continuing downloads. Too frequent can result in a large slowdown. But for buggy iEEG pulls, frequent saves save progress.")
 
     misc_group = parser.add_argument_group('Misc options')
     misc_group.add_argument("--include_annotation", action='store_true', default=False, help="If downloading by time, include annotations/events file. Defaults to scalp layer names.")
@@ -103,6 +105,10 @@ if __name__ == '__main__':
     misc_group.add_argument("--backend", type=str, default='MNE', help="Backend data handler.")
     misc_group.add_argument("--ch_type", default=None, type=str, help="Manual set of channel type if not matched by known patterns. (i.e. 'seeg' for intracranial data)")
     misc_group.add_argument("--debug", action='store_true', default=False, help="Debug tools. Mainly removes files after generation.")
+    misc_group.add_argument("--randomize", action='store_true', default=False, help="Randomize load order. Useful if doing a bit multipull and we're left with most of the work on a single core.")
+    misc_group.add_argument("--zero_bad_data", action='store_true', default=False, help="Zero out bad data potions.")
+    misc_group.add_argument("--copy_edf", action='store_true', default=False, help="Straight copy an edf to bids format. Do not writeout via mne. (Still checks for valid data using mne)")
+    misc_group.add_argument("--connection_error_folder", default=None, type=str, help="If provided, save connection errors to this folder. Helps determine access issues after a large download.")
     args = parser.parse_args()
 
     # If the user wants an example input file, print it then close application
